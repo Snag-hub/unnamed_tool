@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+  "name": "Read-Later Extension",
+  "version": "1.0",
+  "description": "Save current page to Read-Later.",
+  "icons": {
+    "48": "icons/icon-48.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "browser_action": {
+    "default_icon": "icons/icon-48.png",
+    "default_popup": "popup.html",
+    "default_title": "Add to Read-Later"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  }
+}
