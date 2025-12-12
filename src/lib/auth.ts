@@ -4,7 +4,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import EmailProvider from 'next-auth/providers/email';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '@/db';
-import { accounts, sessions, users, verificationTokens } from '@/db/schema';
+import { accounts, sessions, users, verificationTokens } from '../db/schema';
 import { Adapter } from 'next-auth/adapters';
 import { createTransport } from 'nodemailer';
 

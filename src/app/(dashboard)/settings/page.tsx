@@ -39,27 +39,19 @@ export default async function SettingsPage() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-black">
-            <div className="container mx-auto max-w-4xl p-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <Link
-                        href="/"
-                        className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors mb-4 inline-block"
-                    >
-                        ← Back to Home
-                    </Link>
-                    <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white">
-                        Settings
-                    </h1>
-                    <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-                        Manage your account and API access
-                    </p>
-                </div>
-
-                {/* Settings Content */}
-                <SettingsClient apiToken={apiToken} userId={clerkUser.id} />
+        <main className="p-4 md:p-8 max-w-4xl">
+            {/* Header */}
+            <div className="mb-8">
+                <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white">
+                    Settings
+                </h1>
+                <p className="text-zinc-600 dark:text-zinc-400 mt-2">
+                    Manage your account and API access
+                </p>
             </div>
-        </div>
+
+            {/* Settings Content */}
+            <SettingsClient apiToken={apiToken} userId={clerkUser.id} />
+        </main>
     );
 }

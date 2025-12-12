@@ -12,10 +12,12 @@
     "@auth/drizzle-adapter": "^1.11.1",
     "@clerk/nextjs": "^6.36.2",
     "@neondatabase/serverless": "^1.0.2",
+    "clsx": "^2.1.1",
     "cookie": "^1.1.1",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.0",
+    "lucide-react": "^0.561.0",
     "next": "16.0.8",
     "next-auth": "^4.24.13",
     "next-pwa": "^5.6.0",
@@ -24,6 +26,8 @@
     "open-graph-scraper": "^6.11.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "react-intersection-observer": "^10.0.0",
+    "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

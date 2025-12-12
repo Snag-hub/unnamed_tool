@@ -67,6 +67,12 @@ export async function POST(req: Request) {
       title: metadata.title,
       description: metadata.description,
       image: metadata.image,
+      // V2 Fields
+      siteName: metadata.siteName,
+      favicon: metadata.favicon,
+      type: metadata.type || 'other',
+      author: metadata.author,
+      status: 'inbox',
     }).returning();
 
     return NextResponse.json(newItem[0], { status: 201, headers: corsHeaders });
@@ -84,7 +90,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const userItems = await db.select().from(items).where(eq(items.userId, userId));
+    const userItems = await db.select().from(items).where(eq(items.userId, userId)).orderBy(items.createdAt);
     return NextResponse.json(userItems, { status: 200, headers: corsHeaders });
   } catch (error) {
     console.error('Error fetching items:', error);

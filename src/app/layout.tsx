@@ -16,6 +16,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Read Later",
   description: "Save articles, videos, and more to read when you have time.",
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Optional: prevents zooming on mobile inputs
 };
 
 export default function RootLayout({

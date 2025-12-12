@@ -56,3 +56,51 @@ This TODO list is based on the "Read-later Engine — Full Project Canvas.pdf" d
 - [x] Test authentication
 - [x] Test protected API routes
 - [x] Test browser extension
+
+# Phase 2: The "Elegant" Upgrade (V2.0)
+
+## 2.1. Database & Core Logic (COMPLETED ✅)
+- [x] **Schema Update**
+    - [x] Add `status` enum (inbox, archived, trash)
+    - [x] Add `isFavorite` (boolean)
+    - [x] Add `reminderAt` (timestamp)
+    - [x] Add `metadata` fields (siteName, favicon, author, duration/readingTime, type)
+    - [x] Run migrations
+- [x] **Enhanced Metadata Scraper**
+    - [x] Improve `metadata.ts` to fetch Author and Site Name
+    - [x] Add specific logic for YouTube (duration, channel name)
+    - [x] Calculate estimated reading time for articles
+
+## 2.2. UI/UX Overhaul ("Best Design")
+- [ ] **App Shell Layout**
+    - [ ] Create responsive Sidebar navigation (Inbox, Favorites, Later, Settings)
+    - [ ] Implement "App Layout" component to wrap pages
+- [ ] **Item Cards & Grid**
+    - [ ] Design rich "Article Card" (Image, Title, Site, Time, Actions)
+    - [ ] Design "Video Card" for YouTube (Play button overlay)
+    - [ ] Implement Masonry or Responsive Grid layout
+- [ ] **Interactions**
+    - [ ] Add "Swipe to Archive" (mobile) or Hover Actions (desktop)
+    - [ ] Add smooth transitions (Framer Motion or CSS)
+
+## 2.3. Reminders & Notifications
+- [ ] **Reminder System (Backend)**
+    - [ ] Create API to set/update reminders
+    - [ ] Implement cron job logic (check for due reminders)
+- [ ] **Email Notifications (Mailjet)**
+    - [ ] Configure Mailjet client
+    - [ ] Design HTML email template for "Daily Digest"
+    - [ ] Implement email sending logic
+- [ ] **Push Notifications (Web/Android)**
+    - [ ] Update Service Worker for `push` events
+    - [ ] Implement VAPID key generation and subscription logic
+    - [ ] Build "Enable Notifications" UI
+
+## 2.4. Features & Polish
+- [ ] **Import/Export**
+    - [ ] Create "Import URLs" text area
+    - [ ] Implement CSV import parser
+- [ ] **Search & Filter**
+    - [ ] Add search bar (client-side filtering first)
+    - [ ] Add filters (Videos, Articles, Favorites)
+

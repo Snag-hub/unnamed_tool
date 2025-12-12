@@ -2,11 +2,13 @@
 
 import { generateApiToken } from './actions';
 import { useState } from 'react';
+import { ReminderScheduler } from '@/components/reminder-scheduler';
 
 export default function SettingsClient({ apiToken, userId }: { apiToken?: string | null; userId: string }) {
     const [token, setToken] = useState(apiToken);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showReminders, setShowReminders] = useState(false);
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -32,7 +34,7 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
     return (
         <div className="space-y-6">
             {/* API Token Card */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 md:p-8 shadow-sm">
                 <div className="flex items-start justify-between mb-6">
                     <div>
                         <h2 className="text-2xl font-semibold text-black dark:text-white mb-2">
@@ -105,8 +107,28 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                 </div>
             </div>
 
+            {/* General Reminders Card */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 md:p-8 shadow-sm">
+                <div className="flex items-start justify-between mb-6">
+                    <div>
+                        <h2 className="text-2xl font-semibold text-black dark:text-white mb-2">
+                            General Reminders
+                        </h2>
+                        <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                            Set personal reminders (e.g. "Read for 30 mins") that aren't tied to a specific item.
+                        </p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowReminders(true)}
+                    className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-medium rounded-full transition-colors"
+                >
+                    Manage Reminders
+                </button>
+            </div>
+
             {/* Usage Instructions */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 md:p-8 shadow-sm">
                 <h3 className="text-xl font-semibold text-black dark:text-white mb-4">
                     How to use your API token
                 </h3>
@@ -152,6 +174,10 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                     </p>
                 </div>
             </div>
+
+            {showReminders && (
+                <ReminderScheduler onClose={() => setShowReminders(false)} />
+            )}
         </div>
     );
 }

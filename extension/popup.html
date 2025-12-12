@@ -1,34 +1,72 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
-    <title>Read-Later Extension</title>
-    <style>
-      body { width: 300px; padding: 10px; font-family: sans-serif; }
-      input { width: 100%; margin-bottom: 10px; padding: 5px; box-sizing: border-box; }
-      button { width: 100%; padding: 8px; background-color: #0070f3; color: white; border: none; cursor: pointer; border-radius: 4px; }
-      button:hover { background-color: #0051a2; }
-      #status { margin-top: 10px; font-size: 0.9em; color: #666; }
-      .hidden { display: none; }
-      h1 { font-size: 1.2em; margin-top: 0; }
-    </style>
-  </head>
-  <body>
-    <h1>Read-Later</h1>
-    
-    <div id="tokenSection">
-      <p>Enter your API Token:</p>
-      <input type="password" id="apiToken" placeholder="Paste token here">
-      <button id="saveToken">Save Token</button>
+    <title>Link Locker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Auth View -->
+    <div id="tokenSection" class="container token-view">
+        <div class="token-icon">🔐</div>
+        <h2>Connect Account</h2>
+        <p style="font-size: 13px; color: var(--secondary-text); margin-bottom: 16px;">
+            Paste your API Token from Settings to start saving.
+        </p>
+        <div class="form-group">
+            <input type="password" id="apiToken" placeholder="Paste token here...">
+        </div>
+        <button id="saveToken" class="btn btn-primary">Connect</button>
     </div>
 
-    <div id="mainSection" class="hidden">
-      <p>Save current page to your Read-Later list.</p>
-      <button id="saveButton">Save Page</button>
-      <button id="changeToken" style="margin-top: 5px; background-color: #ccc; color: black;">Change Token</button>
+    <!-- Main View -->
+    <div id="mainSection" class="container hidden">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="link">Save Link</button>
+            <button class="tab-btn" data-tab="reminder">Reminder</button>
+        </div>
+
+        <!-- content: Save Link -->
+        <div id="tab-link" class="content">
+            <div class="form-group">
+                <label>Page Title</label>
+                <input type="text" id="pageTitle" readonly style="color: var(--secondary-text); background: var(--secondary-bg);">
+            </div>
+            <button id="saveButton" class="btn btn-primary">
+                <span>Save to Inbox</span>
+            </button>
+        </div>
+
+        <!-- content: Reminder -->
+        <div id="tab-reminder" class="content hidden">
+            <div class="form-group">
+                <label for="remTitle">Reminder</label>
+                <input type="text" id="remTitle" placeholder="e.g. Read about Next.js">
+            </div>
+            <div class="form-group">
+                <label for="remTime">When?</label>
+                <select id="remTime">
+                    <option value="1h">In 1 Hour</option>
+                    <option value="4h">In 4 Hours</option>
+                    <option value="tomorrow9">Tomorrow 9 AM</option>
+                    <option value="tomorrow18">Tomorrow 6 PM</option>
+                    <option value="nextweek">Next Monday</option>
+                </select>
+            </div>
+            <button id="saveReminder" class="btn btn-primary">
+                <span>Set Reminder</span>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 0 16px 16px; border-top: 1px solid var(--border-color); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <p id="status"></p>
+            <button id="changeToken" style="background: none; border: none; font-size: 11px; color: var(--secondary-text); cursor: pointer; text-decoration: underline;">Settings</button>
+        </div>
     </div>
 
-    <p id="status"></p>
     <script src="popup.js"></script>
-  </body>
+</body>
 </html>

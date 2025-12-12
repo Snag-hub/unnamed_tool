@@ -1,58 +1,78 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  // DOM Elements
   const tokenSection = document.getElementById('tokenSection');
   const mainSection = document.getElementById('mainSection');
   const apiTokenInput = document.getElementById('apiToken');
   const saveTokenButton = document.getElementById('saveToken');
-  const saveButton = document.getElementById('saveButton');
   const changeTokenButton = document.getElementById('changeToken');
   const statusParagraph = document.getElementById('status');
 
-  // Helper to support both browser (Firefox) and chrome (Chrome) APIs
+  // Tabs & Content
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = {
+    link: document.getElementById('tab-link'),
+    reminder: document.getElementById('tab-reminder')
+  };
+
+  // Form Elements
+  const pageTitleInput = document.getElementById('pageTitle');
+  const saveLinkBtn = document.getElementById('saveButton');
+
+  const remTitleInput = document.getElementById('remTitle');
+  const remTimeSelect = document.getElementById('remTime');
+  const saveReminderBtn = document.getElementById('saveReminder');
+
+  // Base URL (Change this for production!)
+  const API_BASE = 'http://localhost:3000/api';
+
+  // --- Helpers ---
+
+  // Browser agnostic APIs
   const api = window.browser || window.chrome;
 
-  function getStorage(key) {
-    return new Promise((resolve) => {
-      api.storage.local.get(key, (result) => {
-        // Chrome returns result directly in callback, Firefox returns promise but also supports callback in polyfill usually.
-        // If using native browser namespace in Firefox, it returns promise.
-        // Let's try to handle both if possible, but for now assuming callback style works for chrome and polyfilled browser.
-        // If window.browser is native (Firefox), it returns a promise if no callback is provided.
-        // But here we provided a callback.
-        resolve(result);
-      });
-    });
-  }
-
-  // Better approach: check if it returns a promise
-  async function getStoragePromised(key) {
-    if (window.browser && browser.storage) {
-      return browser.storage.local.get(key);
-    }
+  async function getStorage(key) {
+    if (window.browser && browser.storage) return browser.storage.local.get(key);
     return new Promise(resolve => chrome.storage.local.get(key, resolve));
   }
 
-  async function setStoragePromised(data) {
-    if (window.browser && browser.storage) {
-      return browser.storage.local.set(data);
-    }
+  async function setStorage(data) {
+    if (window.browser && browser.storage) return browser.storage.local.set(data);
     return new Promise(resolve => chrome.storage.local.set(data, resolve));
   }
 
-  async function queryTabsPromised(query) {
+  async function getCurrentTab() {
     if (window.browser && browser.tabs) {
-      return browser.tabs.query(query);
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      return tabs[0];
     }
-    return new Promise(resolve => chrome.tabs.query(query, resolve));
+    return new Promise(resolve => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs[0]));
+    });
   }
 
-  // Load token
-  const { apiToken } = await getStoragePromised('apiToken');
+  function setStatus(msg, type = 'normal') {
+    statusParagraph.textContent = msg;
+    statusParagraph.className = type;
+    if (type === 'success') {
+      setTimeout(() => {
+        statusParagraph.textContent = '';
+        statusParagraph.className = '';
+      }, 3000);
+    }
+  }
+
+  // --- Initialization ---
+
+  const { apiToken } = await getStorage('apiToken');
 
   if (apiToken) {
     showMain();
+    loadCurrentPageInfo();
   } else {
     showToken();
   }
+
+  // --- UI Logic ---
 
   function showToken() {
     tokenSection.classList.remove('hidden');
@@ -64,64 +84,129 @@ document.addEventListener('DOMContentLoaded', async () => {
     mainSection.classList.remove('hidden');
   }
 
+  async function loadCurrentPageInfo() {
+    const tab = await getCurrentTab();
+    if (tab && tab.title) {
+      pageTitleInput.value = tab.title;
+    }
+  }
+
+  // Tab Switching
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Deactivate all
+      tabBtns.forEach(b => b.classList.remove('active'));
+      Object.values(tabContents).forEach(c => c.classList.add('hidden'));
+
+      // Activate clicked
+      btn.classList.add('active');
+      const tabName = btn.dataset.tab;
+      tabContents[tabName].classList.remove('hidden');
+    });
+  });
+
+  // --- Actions ---
+
+  // 1. Save Token
   saveTokenButton.addEventListener('click', async () => {
     const token = apiTokenInput.value.trim();
     if (token) {
-      await setStoragePromised({ apiToken: token });
+      await setStorage({ apiToken: token });
       showMain();
-      statusParagraph.textContent = 'Token saved!';
-      setTimeout(() => statusParagraph.textContent = '', 2000);
+      loadCurrentPageInfo();
+      setStatus('Connected!', 'success');
     }
   });
 
-  changeTokenButton.addEventListener('click', () => {
-    showToken();
-  });
+  // 2. Change Token
+  changeTokenButton.addEventListener('click', () => showToken());
 
-  saveButton.addEventListener('click', async () => {
-    statusParagraph.textContent = 'Saving...';
+  // 3. Save Link
+  saveLinkBtn.addEventListener('click', async () => {
+    setStatus('Saving link...');
     try {
-      const { apiToken } = await getStoragePromised('apiToken');
-      if (!apiToken) {
-        showToken();
-        statusParagraph.textContent = 'Please set your API token.';
+      const { apiToken } = await getStorage('apiToken');
+      const tab = await getCurrentTab();
+
+      if (!tab || !tab.url) {
+        setStatus('No URL found', 'error');
         return;
       }
 
-      const tabs = await queryTabsPromised({ active: true, currentWindow: true });
-      const tab = tabs[0];
+      const res = await fetch(`${API_BASE}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiToken}` },
+        body: JSON.stringify({ url: tab.url })
+      });
 
-      if (tab?.url) {
-        console.log('Saving URL:', tab.url);
-        console.log('Using token:', apiToken.substring(0, 10) + '...');
-
-        const response = await fetch('http://localhost:3000/api/items', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiToken}`
-          },
-          body: JSON.stringify({ url: tab.url }),
-        });
-
-        console.log('Response status:', response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Success:', data);
-          statusParagraph.textContent = 'Page saved successfully!';
-          setTimeout(() => statusParagraph.textContent = '', 3000);
-        } else {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          console.error('Error response:', errorData);
-          statusParagraph.textContent = `Error: ${errorData.error || 'Failed to save page.'}`;
-        }
+      if (res.ok) {
+        setStatus('Link saved!', 'success');
       } else {
-        statusParagraph.textContent = 'Could not get current page URL.';
+        const data = await res.json().catch(() => ({}));
+        setStatus(data.error || 'Failed to save', 'error');
       }
-    } catch (error) {
-      console.error('Error saving page:', error);
-      statusParagraph.textContent = `Error: ${error.message || 'An unexpected error occurred.'}`;
+    } catch (e) {
+      setStatus('Network error', 'error');
     }
   });
+
+  // 4. Save Reminder
+  saveReminderBtn.addEventListener('click', async () => {
+    const title = remTitleInput.value.trim();
+    if (!title) {
+      setStatus('Title is required', 'error');
+      return;
+    }
+
+    setStatus('Scheduling...');
+
+    // Calculate Time
+    const timeKey = remTimeSelect.value;
+    const now = new Date();
+    let scheduledAt = new Date();
+
+    switch (timeKey) {
+      case '1h': scheduledAt.setHours(now.getHours() + 1); break;
+      case '4h': scheduledAt.setHours(now.getHours() + 4); break;
+      case 'tomorrow9':
+        scheduledAt.setDate(now.getDate() + 1);
+        scheduledAt.setHours(9, 0, 0, 0);
+        break;
+      case 'tomorrow18':
+        scheduledAt.setDate(now.getDate() + 1);
+        scheduledAt.setHours(18, 0, 0, 0);
+        break;
+      case 'nextweek':
+        // Next Monday
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day == 0 ? -6 : 1) + 7;
+        // Simple logic: just add 7 days? Or real "Next Monday"?
+        // Let's do simple: Today + 7 days
+        scheduledAt.setDate(now.getDate() + 7);
+        break;
+    }
+
+    try {
+      const { apiToken } = await getStorage('apiToken');
+      const res = await fetch(`${API_BASE}/reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiToken}` },
+        body: JSON.stringify({
+          title,
+          scheduledAt: scheduledAt.toISOString()
+        })
+      });
+
+      if (res.ok) {
+        setStatus('Reminder set!', 'success');
+        remTitleInput.value = ''; // Reset
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setStatus(data.error || 'Failed to set reminder', 'error');
+      }
+    } catch (e) {
+      setStatus('Network error', 'error');
+    }
+  });
+
 });
