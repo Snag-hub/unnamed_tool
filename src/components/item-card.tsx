@@ -38,17 +38,18 @@ export function ItemCard({ item }: { item: Item }) {
 
     return (
         <>
-            <div className={`group relative flex flex-col overflow-hidden rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:shadow-md dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className={`group relative flex flex-row sm:flex-col overflow-hidden rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:shadow-md dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''} h-32 sm:h-auto`}>
 
                 {/* Image Section */}
                 {item.image && (
-                    <div className="relative aspect-video w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                    <div className="relative w-32 shrink-0 sm:w-full sm:h-auto sm:aspect-video bg-zinc-100 dark:bg-zinc-800">
                         <img
                             src={item.image}
                             alt={item.title || 'Item image'}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute bottom-2 right-2 flex gap-1">
+                        {/* Badges - visible on desktop, hidden/smaller on mobile if needed */}
+                        <div className="absolute bottom-2 right-2 hidden sm:flex gap-1">
                             {item.type === 'video' && (
                                 <div className="rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
                                     Video
@@ -64,67 +65,67 @@ export function ItemCard({ item }: { item: Item }) {
                 )}
 
                 {/* Content Section */}
-                <div className="flex flex-1 flex-col p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                        {item.favicon ? (
-                            <img
-                                src={item.favicon}
-                                alt=""
-                                className="h-4 w-4 rounded-sm"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                            />
-                        ) : (
-                            <div className="h-4 w-4 rounded-sm bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex flex-1 flex-col justify-between p-3 sm:p-4 overflow-hidden">
+                    <div>
+                        <div className="mb-1 sm:mb-2 flex items-center gap-2">
+                            {item.favicon ? (
+                                <img
+                                    src={item.favicon}
+                                    alt=""
+                                    className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm bg-zinc-200 dark:bg-zinc-700" />
+                            )}
+                            <span className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-[80px] sm:max-w-none">
+                                {item.siteName || new URL(item.url).hostname}
+                            </span>
+                            <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                            <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500">
+                                {new Date(item.createdAt).toLocaleDateString()}
+                            </span>
+                        </div>
+
+                        <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block text-sm sm:text-base font-semibold leading-tight text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-400 line-clamp-2 sm:line-clamp-none"
+                        >
+                            {item.title || item.url}
+                        </a>
+
+                        {item.description && (
+                            <p className="mt-1 hidden sm:block line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                                {item.description}
+                            </p>
                         )}
-                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
-                            {item.siteName || new URL(item.url).hostname}
-                        </span>
-                        <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                        <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                            {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
                     </div>
 
-                    <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mb-2 block text-base font-semibold leading-tight text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-400"
-                    >
-                        {item.title || item.url}
-                    </a>
-
-                    {item.description && (
-                        <p className="mb-4 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                            {item.description}
-                        </p>
-                    )}
-
-                    <div className="mt-auto flex items-center justify-end gap-2 pt-2 transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                    {/* Actions - Compact on mobile */}
+                    <div className="mt-1 flex items-center justify-end gap-1 sm:gap-2 sm:mt-auto sm:pt-2">
                         <button
                             onClick={handleFavorite}
-                            className={`rounded-full p-2 transition-colors ${item.isFavorite ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                            title={item.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                            className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.isFavorite ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
                         >
-                            <StarIcon filled={item.isFavorite} className="h-5 w-5" />
+                            <StarIcon filled={item.isFavorite} className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
 
                         <button
                             onClick={() => setShowReminderDialog(true)}
-                            className={`rounded-full p-2 transition-colors ${item.reminderAt ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                            title="Reminders"
+                            className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.reminderAt ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
                         >
-                            <BellIcon className="h-5 w-5" />
+                            <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
 
                         <button
                             onClick={handleArchive}
-                            className={`rounded-full p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                            title={item.status === 'archived' ? "Unarchive" : "Archive"}
+                            className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
                         >
-                            <ArchiveIcon className="h-5 w-5" />
+                            <ArchiveIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
 
                         <button
@@ -132,10 +133,9 @@ export function ItemCard({ item }: { item: Item }) {
                                 e.preventDefault();
                                 setShowDeleteConfirm(true);
                             }}
-                            className="rounded-full p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                            title="Move to Trash"
+                            className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-900/20 dark:hover:text-red-400"
                         >
-                            <TrashIcon className="h-5 w-5" />
+                            <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
                     </div>
                 </div>

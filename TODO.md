@@ -74,6 +74,11 @@ This TODO list is based on the "Read-later Engine — Full Project Canvas.pdf" d
 ## 2.2. UI/UX Overhaul ("Best Design")
 - [ ] **App Shell Layout**
     - [ ] Create responsive Sidebar navigation (Inbox, Favorites, Later, Settings)
+    - [ ] **Mobile Navigation Upgrade**:
+        - [ ] Convert sidebar to bottom tab bar on mobile (WhatsApp style)
+        - [ ] Limit to 4 main tabs (Idea: Inbox, Favorites, Archive, Search/Tags)
+        - [ ] Move Settings and less used tabs to sidebar/drawer or "More" tab
+        - [ ] Add User Profile icon (top-right) for Sign Out and Account Management
     - [ ] Implement "App Layout" component to wrap pages
 - [ ] **Item Cards & Grid**
     - [ ] Design rich "Article Card" (Image, Title, Site, Time, Actions)
