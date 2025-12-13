@@ -26,20 +26,34 @@ function ShareContent() {
             return;
         }
 
-        if (!url) {
-            setStatus('error');
-            setMessage('No URL provided to save.');
-            return;
-        }
+
 
         const save = async () => {
             try {
                 // Determine text/title priority
-                // Many apps share date as text.
-                const finalTitle = title || '';
-                const finalDesc = text || '';
+                // Some browsers (Chrome Android) put URL in text field if not matching exact manifest param logic sometimes,
+                // or if sharing a "text + url" combo.
 
-                await createItem(url, finalTitle, finalDesc);
+                let targetUrl = url;
+                let finalTitle = title || '';
+                let finalDesc = text || '';
+
+                // Fallback: Try to extract URL from text if url param is missing
+                if (!targetUrl && text) {
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    const match = text.match(urlRegex);
+                    if (match) {
+                        targetUrl = match[0];
+                        // Optional: Remove URL from desc if we want clean text, but keeping it is fine.
+                    }
+                }
+
+                if (!targetUrl) {
+                    throw new Error('No URL found to save.');
+                }
+
+
+                await createItem(targetUrl, finalTitle, finalDesc);
                 setStatus('success');
                 setTimeout(() => {
                     router.push('/inbox');
@@ -51,7 +65,13 @@ function ShareContent() {
             }
         };
 
-        save();
+        if (url || text) {
+            save();
+        } else {
+            setStatus('error');
+            setMessage('No content provided to save.');
+        }
+
     }, [isLoaded, isSignedIn, url, title, text, router]);
 
     return (
