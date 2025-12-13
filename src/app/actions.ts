@@ -6,6 +6,7 @@ import { items, reminders } from '@/db/schema';
 import { eq, and, desc, sql, ilike, or } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
+import { getMetadata } from '@/lib/metadata';
 
 export async function fetchItems({
     page = 1,
@@ -210,4 +211,46 @@ export async function deleteItem(itemId: string) {
     revalidatePath('/favorites');
     revalidatePath('/archive');
     revalidatePath('/trash');
+}
+// ... deleteItem ...
+
+export async function createItem(url: string, title?: string, description?: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        const existingItem = await db
+            .select()
+            .from(items)
+            .where(and(eq(items.url, url), eq(items.userId, userId)))
+            .limit(1);
+
+        if (existingItem.length > 0) {
+            return { success: true, message: 'Item already exists', item: existingItem[0] };
+        }
+
+        const metadata = await getMetadata(url);
+
+        const newItem = await db.insert(items).values({
+            id: uuidv4(),
+            userId,
+            url,
+            title: title || metadata.title,
+            description: description || metadata.description,
+            image: metadata.image,
+            siteName: metadata.siteName,
+            favicon: metadata.favicon,
+            type: metadata.type || 'other',
+            author: metadata.author,
+            status: 'inbox',
+        }).returning();
+
+        revalidatePath('/inbox');
+        return { success: true, item: newItem[0] };
+    } catch (error) {
+        console.error('Create Item Error:', error);
+        throw new Error('Failed to create item');
+    }
 }
