@@ -1,7 +1,7 @@
 {
-  "name": "Read-Later",
-  "short_name": "Read-Later",
-  "description": "Save articles, videos, and web pages to read later.",
+  "name": "DayOS",
+  "short_name": "DayOS",
+  "description": "Your daily driver for productivity and reading.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

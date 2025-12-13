@@ -39,8 +39,8 @@ export const authOptions: NextAuthOptions = {
                 await transport.sendMail({
                     to: identifier,
                     from: provider.from,
-                    subject: 'Sign in to Read-Later',
-                    html: `<p>Click the magic link below to sign in to Read-Later:</p>
+                    subject: 'Sign in to DayOS',
+                    html: `<p>Click the magic link below to sign in to DayOS:</p>
                  <p><a href="${url}">Sign in</a></p>`,
                 });
             },

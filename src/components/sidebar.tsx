@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/clerk-buttons';
 import { Inbox, Star, Archive, Trash2, Settings, X } from 'lucide-react';
@@ -30,10 +31,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Logo */}
             <div className="flex h-16 items-center justify-between px-6">
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl text-zinc-900 dark:text-white">
-                    <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                        R
-                    </div>
-                    <span>Read Later</span>
+                    <Image
+                        src="/icon-192.png"
+                        alt="DayOS Logo"
+                        width={32}
+                        height={32}
+                        className="rounded-lg"
+                    />
+                    <span>DayOS</span>
                 </Link>
                 {/* Mobile Close Button */}
                 <button

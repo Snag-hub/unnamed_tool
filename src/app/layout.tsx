@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Read Later",
-  description: "Save articles, videos, and more to read when you have time.",
+  title: "DayOS",
+  description: "Your daily driver for productivity and reading.",
   manifest: "/manifest.json",
 };
 

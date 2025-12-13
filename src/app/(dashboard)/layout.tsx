@@ -28,7 +28,7 @@ export default function DashboardLayout({
                         <span className="sr-only">Open sidebar</span>
                         <Menu className="h-6 w-6" />
                     </button>
-                    <div className="ml-2 font-bold text-lg text-zinc-900 dark:text-white">Read Later</div>
+                    <div className="ml-2 font-bold text-lg text-zinc-900 dark:text-white">DayOS</div>
                 </div>
 
                 <div className="flex-1">
