@@ -12,7 +12,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "http://localhost:3000/*"
+    "http://*/*",
+    "https://*/*"
   ],
   "browser_action": {
     "default_icon": "icons/icon-48.png",
@@ -23,5 +24,17 @@
     "scripts": [
       "background.js"
     ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "dayos-extension@dayos.app",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ],
+        "optional": []
+      }
+    }
   }
 }

@@ -109,3 +109,14 @@ This TODO list is based on the "Read-later Engine — Full Project Canvas.pdf" d
     - [ ] Add search bar (client-side filtering first)
     - [ ] Add filters (Videos, Articles, Favorites)
 
+## 2.5. Final Polish & Suggestions
+- [ ] **Polishing**
+    - [ ] Add official Favicon to website
+    - [ ] Dynamic Web Page Titles (e.g. "Inbox (3) - DayOS")
+    - [ ] **Dark Mode Assets**: Create specific icons/assets optimized for dark mode.
+- [ ] **User Experience Improvements**
+    - [ ] **Open Graph Tags**: Ensure sharing DayOS links looks good on social media.
+    - [ ] **Custom PWA Install Button**: A visible "Install App" button.
+    - [ ] **Keyboard Shortcuts**: 'A' to Archive, 'F' to Favorite, 'Del' to Trash.
+    - [ ] **Dark Mode Toggle**: Manual switch for users who want different theme than OS.
+

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tokenSection = document.getElementById('tokenSection');
   const mainSection = document.getElementById('mainSection');
   const apiTokenInput = document.getElementById('apiToken');
+  const apiBaseInput = document.getElementById('apiBase');
   const saveTokenButton = document.getElementById('saveToken');
   const changeTokenButton = document.getElementById('changeToken');
   const statusParagraph = document.getElementById('status');
@@ -22,8 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const remTimeSelect = document.getElementById('remTime');
   const saveReminderBtn = document.getElementById('saveReminder');
 
-  // Base URL (Change this for production!)
-  const API_BASE = 'http://localhost:3000/api';
+
+  // Default Base URL
+  let API_BASE = 'http://localhost:3000/api';
 
   // --- Helpers ---
 
@@ -63,13 +65,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // --- Initialization ---
 
-  const { apiToken } = await getStorage('apiToken');
+  const { apiToken, apiBase } = await getStorage(['apiToken', 'apiBase']);
 
-  if (apiToken) {
+  if (apiBase) {
+    API_BASE = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+  }
+
+  if (apiToken && apiBase) {
     showMain();
     loadCurrentPageInfo();
   } else {
     showToken();
+    if (apiBase) apiBaseInput.value = apiBase.replace('/api', '');
   }
 
   // --- UI Logic ---
@@ -110,11 +117,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. Save Token
   saveTokenButton.addEventListener('click', async () => {
     const token = apiTokenInput.value.trim();
-    if (token) {
-      await setStorage({ apiToken: token });
+    let base = apiBaseInput.value.trim();
+
+    if (base && !base.startsWith('http')) {
+      base = 'https://' + base;
+    }
+
+    // Strip trailing slash
+    if (base && base.endsWith('/')) {
+      base = base.slice(0, -1);
+    }
+
+    if (token && base) {
+      await setStorage({ apiToken: token, apiBase: base });
+
+      API_BASE = base.endsWith('/api') ? base : `${base}/api`;
+
       showMain();
       loadCurrentPageInfo();
       setStatus('Connected!', 'success');
+    } else {
+      setStatus('Fill both fields', 'error');
     }
   });
 
