@@ -29,6 +29,7 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
     const [loadingReminders, setLoadingReminders] = useState(true);
     const [reminderTitle, setReminderTitle] = useState('');
     const [reminderTime, setReminderTime] = useState('');
+    const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
     const [addingReminder, setAddingReminder] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -76,15 +77,16 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
             const dateObj = new Date(reminderTime);
 
             if (editingId) {
-                await updateReminder(editingId, dateObj, 'none', reminderTitle);
+                await updateReminder(editingId, dateObj, recurrence, reminderTitle);
                 setEditingId(null);
             } else {
-                await addReminder(dateObj, 'none', undefined, reminderTitle);
+                await addReminder(dateObj, recurrence, undefined, reminderTitle);
             }
 
             await loadReminders();
             setReminderTitle('');
             setReminderTime('');
+            setRecurrence('none');
         } catch (e) {
             console.error(e);
             alert('Failed to save reminder');
@@ -101,6 +103,7 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
         const offset = d.getTimezoneOffset() * 60000;
         const localISOTime = (new Date(d.getTime() - offset)).toISOString().slice(0, 16);
         setReminderTime(localISOTime);
+        setRecurrence(reminder.recurrence || 'none');
 
         // Scroll to form (optional UX)
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -110,6 +113,7 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
         setEditingId(null);
         setReminderTitle('');
         setReminderTime('');
+        setRecurrence('none');
     };
 
     const handleDeleteReminder = async (id: string) => {
@@ -378,10 +382,23 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                             />
                             <input
                                 type="datetime-local"
+                            <input
+                                type="datetime-local"
                                 value={reminderTime}
                                 onChange={(e) => setReminderTime(e.target.value)}
                                 className="sm:w-48 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-purple-500 transition-all text-zinc-600 dark:text-zinc-300"
                             />
+
+                            <select
+                                value={recurrence}
+                                onChange={(e) => setRecurrence(e.target.value as 'none' | 'daily' | 'weekly' | 'monthly')}
+                                className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-purple-500 transition-all text-zinc-600 dark:text-zinc-300"
+                            >
+                                <option value="none">One-time</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
 
                             {editingId ? (
                                 <div className="flex gap-2">
@@ -437,8 +454,13 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                                         </div>
                                         <div>
                                             <p className="font-medium text-zinc-900 dark:text-zinc-100">{reminder.title}</p>
-                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                                Due: <span className="text-zinc-700 dark:text-zinc-300">{new Date(reminder.scheduledAt).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-2">
+                                                <span>Due: <span className="text-zinc-700 dark:text-zinc-300">{new Date(reminder.scheduledAt).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></span>
+                                                {reminder.recurrence !== 'none' && (
+                                                    <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide">
+                                                        {reminder.recurrence}
+                                                    </span>
+                                                )}
                                             </p>
                                         </div>
                                     </div>
