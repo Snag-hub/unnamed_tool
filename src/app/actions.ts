@@ -3,7 +3,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { items, reminders, pushSubscriptions } from '@/db/schema';
-import { items, reminders, pushSubscriptions } from '@/db/schema';
+
 import { eq, and, desc, sql, ilike, or } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
