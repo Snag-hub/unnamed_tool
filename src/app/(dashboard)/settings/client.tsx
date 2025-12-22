@@ -249,6 +249,25 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                         >
                             Enable Notifications
                         </button>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const registration = await navigator.serviceWorker.ready;
+                                    const sub = await registration.pushManager.getSubscription();
+                                    if (!sub) return alert('Enable notifications first!');
+
+                                    const { sendTestNotification } = await import('@/app/actions');
+                                    await sendTestNotification(JSON.stringify(sub));
+                                    alert('Test sent! Check your notifications.');
+                                } catch (e) {
+                                    console.error(e);
+                                    alert('Test failed: ' + e);
+                                }
+                            }}
+                            className="shrink-0 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-sm font-medium transition-colors"
+                        >
+                            Send Test
+                        </button>
                     </div>
                 </div>
             </section>

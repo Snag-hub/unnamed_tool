@@ -3,10 +3,21 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { items, reminders, pushSubscriptions } from '@/db/schema';
+import { items, reminders, pushSubscriptions } from '@/db/schema';
 import { eq, and, desc, sql, ilike, or } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 import { getMetadata } from '@/lib/metadata';
+import webpush from 'web-push';
+
+// Configure Web Push (Global scope for actions)
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        `mailto:${process.env.EMAIL_FROM || 'test@example.com'}`,
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+}
 
 export async function fetchItems({
     page = 1,
@@ -291,4 +302,28 @@ export async function savePushSubscription(subscription: string) {
         p256dh: sub.keys.p256dh,
         auth: sub.keys.auth,
     }).onConflictDoNothing(); // Prevent duplicate subscriptions
+}
+
+export async function sendTestNotification(subscription: string) {
+    const { userId } = await auth();
+    if (!userId) throw new Error('Unauthorized');
+
+    const sub = JSON.parse(subscription);
+    const payload = JSON.stringify({
+        title: '🔔 Test Notification',
+        body: 'It works! Your device is ready to receive DayOS alerts.',
+        icon: '/icon-192.png',
+        url: '/settings'
+    });
+
+    try {
+        await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }
+        }, payload);
+        return { success: true };
+    } catch (error) {
+        console.error('Test Notification Failed:', error);
+        throw new Error('Failed to send test notification');
+    }
 }
