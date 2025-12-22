@@ -382,8 +382,6 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                             />
                             <input
                                 type="datetime-local"
-                            <input
-                                type="datetime-local"
                                 value={reminderTime}
                                 onChange={(e) => setReminderTime(e.target.value)}
                                 className="sm:w-48 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-purple-500 transition-all text-zinc-600 dark:text-zinc-300"
