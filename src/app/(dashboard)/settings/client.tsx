@@ -279,6 +279,21 @@ export default function SettingsClient({ apiToken, userId }: { apiToken?: string
                             <li>HTTPS: {typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'Yes' : 'No (Required for Push)'}</li>
                             <li>VAPID Public Key: {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? 'Present' : 'Missing (Check Env Vars)'}</li>
                         </ul>
+                        <button
+                            onClick={async () => {
+                                if ('serviceWorker' in navigator) {
+                                    const regs = await navigator.serviceWorker.getRegistrations();
+                                    for (let reg of regs) {
+                                        await reg.unregister();
+                                    }
+                                    alert('Service Workers Unregistered. Reloading...');
+                                    window.location.reload();
+                                }
+                            }}
+                            className="mt-4 text-xs text-red-500 hover:text-red-700 underline"
+                        >
+                            Hard Reset Service Worker
+                        </button>
                     </div>
                 </div>
             </section>

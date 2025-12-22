@@ -1,25 +1,33 @@
+console.log('[push-sw] Custom Worker Loaded');
+
 self.addEventListener('push', function (event) {
-    console.log('[Service Worker] Push Received.', event.data);
-    if (event.data) {
-        const data = event.data.json();
-        const options = {
-            body: data.body,
-            icon: data.icon || '/icon-192.png',
-            badge: '/icon-192.png',
-            vibrate: [100, 50, 100],
-            data: {
-                dateOfArrival: Date.now(),
-                primaryKey: '2',
-                url: data.url || '/'
-            },
-            actions: [
-                { action: 'explore', title: 'View' }
-            ]
-        };
-        event.waitUntil(
-            self.registration.showNotification(data.title, options)
-        );
+    console.log('[push-sw] Push Received');
+    let data = { title: 'DayOS Notification', body: 'New alert!', url: '/' };
+
+    try {
+        if (event.data) {
+            data = event.data.json();
+        }
+    } catch (e) {
+        console.error('[push-sw] JSON Parse Error:', e);
     }
+
+    const options = {
+        body: data.body || 'New notification',
+        // icon: data.icon, // Commenting out to rule out 404s
+        // badge: data.icon,
+        vibrate: [100, 50, 100],
+        data: {
+            dateOfArrival: Date.now(),
+            primaryKey: '1',
+            url: data.url || '/'
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'DayOS', options)
+            .catch(err => console.error('[push-sw] Show Notification Error:', err))
+    );
 });
 
 self.addEventListener('notificationclick', function (event) {
