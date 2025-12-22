@@ -129,8 +129,41 @@ export async function GET() {
                 html,
             });
 
-            // Push Notifications Logic (Existing...)
-            // ...
+            // Push Notifications
+            try {
+                const userId = userGroup.items[0].userId;
+                const subs = await db
+                    .select()
+                    .from(pushSubscriptions)
+                    .where(eq(pushSubscriptions.userId, userId));
+
+                console.log(`Checking push for user ${userId}: Found ${subs.length} subscriptions`);
+
+                if (subs.length > 0) {
+                    const payload = JSON.stringify({
+                        title: `DayOS: ${userGroup.items.length} Reminder(s)`,
+                        body: userGroup.items.map(i => i.title).join(', '),
+                        url: userGroup.items[0].type === 'item' ? '/inbox' : '/settings',
+                    });
+
+                    const pushResults = await Promise.allSettled(subs.map(sub =>
+                        webpush.sendNotification({
+                            endpoint: sub.endpoint,
+                            keys: { p256dh: sub.p256dh, auth: sub.auth }
+                        }, payload)
+                    ));
+
+                    pushResults.forEach((res, idx) => {
+                        if (res.status === 'rejected') {
+                            console.error(`Push sub ${idx} failed:`, res.reason);
+                        } else {
+                            console.log(`Push sub ${idx} success`);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Push Logic Error:', error);
+            }
 
             // Cleanup & Reschedule
             for (const item of userGroup.items) {
