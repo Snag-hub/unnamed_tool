@@ -2,9 +2,9 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { items, reminders, pushSubscriptions, users } from '@/db/schema';
+import { items, reminders, pushSubscriptions, users, notes } from '@/db/schema';
 
-import { eq, and, desc, sql, ilike, or } from 'drizzle-orm';
+import { eq, and, desc, sql, ilike, or, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 import { getMetadata } from '@/lib/metadata';
@@ -71,19 +71,18 @@ export async function fetchItems({
     const hasMore = userItems.length > limit;
     const slicedItems = hasMore ? userItems.slice(0, limit) : userItems;
 
-    // Fetch reminders for these items to display the badge correctly if needed
-    // For now, infinite scroll is efficiently fetching items. 
-    // We can fetch reminders client side or join here. 
-    // Let's stick to simple item fetch for now, and fetch reminders on demand or optimistic update.
-    // Actually, to show the bell icon active state, we might need to know if there are reminders.
-    // For MVP V2.3, let's just fetch them on demand in the dialog, 
-    // and maybe a simple count or check if we want the badge. 
-    // BUT, the existing implementation relied on `item.reminderAt`.
-    // We should probably LEFT JOIN or just fetch reminders for looking up.
-    // However, to keep it simple and performant, we will rely on client fetching or a separate call.
+    const itemIds = slicedItems.map(i => i.id);
+    const itemNotes = itemIds.length > 0
+        ? await db.select().from(notes).where(inArray(notes.itemId, itemIds))
+        : [];
+
+    const itemsWithNotes = slicedItems.map(item => ({
+        ...item,
+        notes: itemNotes.filter(n => n.itemId === item.id)
+    }));
 
     return {
-        items: slicedItems,
+        items: itemsWithNotes,
         hasMore,
     };
 }
@@ -599,4 +598,16 @@ export async function getTimelineEvents(date: Date = new Date()) {
     }
 
     return events;
+}
+
+export async function getItem(itemId: string) {
+    const { userId } = await auth();
+    if (!userId) return null;
+
+    const result = await db.select()
+        .from(items)
+        .where(and(eq(items.id, itemId), eq(items.userId, userId)))
+        .limit(1);
+
+    return result[0] || null;
 }

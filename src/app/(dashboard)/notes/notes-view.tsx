@@ -19,9 +19,10 @@ type Note = {
 type NotesViewProps = {
     initialNotes: Note[];
     initialSearch?: string;
+    filterLabel?: string;
 };
 
-export default function NotesView({ initialNotes, initialSearch }: NotesViewProps) {
+export default function NotesView({ initialNotes, initialSearch, filterLabel }: NotesViewProps) {
     const router = useRouter();
     const [search, setSearch] = useState(initialSearch || '');
 
@@ -100,6 +101,24 @@ export default function NotesView({ initialNotes, initialSearch }: NotesViewProp
                         className="w-full pl-10 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
+
+                {/* Filter Label */}
+                {filterLabel && (
+                    <div className="mt-4 flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
+                        <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                                Filtering: <span className="font-bold">{filterLabel}</span>
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => router.push('/notes')}
+                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                            Clear Filter
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Notes List */}

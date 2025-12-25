@@ -8,7 +8,9 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { TrashIcon, VideoIcon, FileText } from 'lucide-react';
 import Link from 'next/link';
 
-type Meeting = InferSelectModel<typeof meetings>;
+type Meeting = InferSelectModel<typeof meetings> & {
+    notes?: any[];
+};
 
 export function MeetingCard({ meeting }: { meeting: Meeting }) {
     const [isPending, setIsPending] = useState(false);
@@ -68,6 +70,38 @@ export function MeetingCard({ meeting }: { meeting: Meeting }) {
                                 <VideoIcon className="h-3 w-3" />
                                 Join Meeting
                             </a>
+                        )}
+
+                        {/* Notes Preview */}
+                        {meeting.notes && meeting.notes.length > 0 && (
+                            <div className="mt-4 space-y-1.5 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                                {meeting.notes.slice(0, 1).map(note => (
+                                    <Link
+                                        key={note.id}
+                                        href={`/notes/${note.id}`}
+                                        className="group/note block p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                    >
+                                        <div className="flex items-start gap-2">
+                                            <FileText className="w-3 h-3 mt-0.5 text-blue-500" />
+                                            <div className="flex-1 min-w-0">
+                                                {note.title && (
+                                                    <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate mb-0.5">
+                                                        {note.title}
+                                                    </div>
+                                                )}
+                                                <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-1 italic">
+                                                    {note.content}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                                {meeting.notes.length > 1 && (
+                                    <Link href={`/notes?meetingId=${meeting.id}`} className="text-[10px] text-zinc-400 hover:text-blue-500 font-medium px-1 transition-colors">
+                                        + {meeting.notes.length - 1} more notes
+                                    </Link>
+                                )}
+                            </div>
                         )}
                     </div>
 

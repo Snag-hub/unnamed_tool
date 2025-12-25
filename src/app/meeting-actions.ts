@@ -2,8 +2,8 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { meetings, reminders } from '@/db/schema';
-import { eq, and, asc, desc } from 'drizzle-orm';
+import { meetings, reminders, notes } from '@/db/schema';
+import { eq, and, asc, desc, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,10 +11,20 @@ export async function getMeetings() {
     const { userId } = await auth();
     if (!userId) return [];
 
-    return await db.select()
+    const result = await db.select()
         .from(meetings)
         .where(eq(meetings.userId, userId))
         .orderBy(asc(meetings.startTime)); // Sort by upcoming
+
+    const meetingIds = result.map(m => m.id);
+    const meetingNotes = meetingIds.length > 0
+        ? await db.select().from(notes).where(inArray(notes.meetingId, meetingIds))
+        : [];
+
+    return result.map(meeting => ({
+        ...meeting,
+        notes: meetingNotes.filter(n => n.meetingId === meeting.id)
+    }));
 }
 
 export async function createMeeting(data: {
@@ -84,4 +94,16 @@ export async function deleteMeeting(meetingId: string) {
 
     await db.delete(meetings).where(and(eq(meetings.id, meetingId), eq(meetings.userId, userId)));
     revalidatePath('/meetings');
+}
+
+export async function getMeeting(meetingId: string) {
+    const { userId } = await auth();
+    if (!userId) return null;
+
+    const result = await db.select()
+        .from(meetings)
+        .where(and(eq(meetings.id, meetingId), eq(meetings.userId, userId)))
+        .limit(1);
+
+    return result[0] || null;
 }

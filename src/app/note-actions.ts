@@ -11,9 +11,9 @@ import { v4 as uuidv4 } from 'uuid';
 export async function createNote(data: {
     title?: string;
     content: string;
-    taskId?: string;
-    meetingId?: string;
-    itemId?: string;
+    taskId?: string | null;
+    meetingId?: string | null;
+    itemId?: string | null;
 }) {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
@@ -46,6 +46,9 @@ export async function updateNote(
     data: {
         title?: string;
         content?: string;
+        taskId?: string | null;
+        meetingId?: string | null;
+        itemId?: string | null;
     }
 ) {
     const { userId } = await auth();
@@ -129,4 +132,34 @@ export async function getNote(noteId: string) {
         .limit(1);
 
     return result[0] || null;
+}
+
+// Fetch potential attachment targets
+export async function getAttachmentTargets() {
+    const { userId } = await auth();
+    if (!userId) throw new Error('Unauthorized');
+
+    const tasksList = await db.query.tasks.findMany({
+        where: (tasks, { eq, and, ne }) => and(eq(tasks.userId, userId), ne(tasks.status, 'done')),
+        limit: 10,
+        orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
+    });
+
+    const meetingsList = await db.query.meetings.findMany({
+        where: (meetings, { eq }) => eq(meetings.userId, userId),
+        limit: 10,
+        orderBy: (meetings, { desc }) => [desc(meetings.startTime)],
+    });
+
+    const itemsList = await db.query.items.findMany({
+        where: (items, { eq, and, ne }) => and(eq(items.userId, userId), ne(items.status, 'archived')),
+        limit: 10,
+        orderBy: (items, { desc }) => [desc(items.createdAt)],
+    });
+
+    return {
+        tasks: tasksList,
+        meetings: meetingsList,
+        items: itemsList,
+    };
 }

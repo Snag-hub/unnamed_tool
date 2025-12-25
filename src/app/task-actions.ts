@@ -2,8 +2,8 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { tasks, projects } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { tasks, projects, notes } from '@/db/schema';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -21,10 +21,16 @@ export async function getTasks() {
         .where(eq(tasks.userId, userId))
         .orderBy(desc(tasks.createdAt));
 
+    const taskIds = result.map(({ task }) => task.id);
+    const taskNotes = taskIds.length > 0
+        ? await db.select().from(notes).where(inArray(notes.taskId, taskIds))
+        : [];
+
     // Flatten structure for easier consumption: { ...task, project: { ...project } }
     return result.map(({ task, project }) => ({
         ...task,
-        project: project || null
+        project: project || null,
+        notes: taskNotes.filter(n => n.taskId === task.id)
     }));
 }
 
@@ -129,4 +135,26 @@ export async function getProjects() {
     if (!userId) return [];
 
     return await db.select().from(projects).where(eq(projects.userId, userId));
+}
+
+export async function getTask(taskId: string) {
+    const { userId } = await auth();
+    if (!userId) return null;
+
+    const result = await db
+        .select({
+            task: tasks,
+            project: projects
+        })
+        .from(tasks)
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+        .limit(1);
+
+    if (!result[0]) return null;
+
+    return {
+        ...result[0].task,
+        project: result[0].project || null
+    };
 }
