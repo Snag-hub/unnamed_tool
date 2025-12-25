@@ -4,7 +4,8 @@ import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
 import { toggleFavorite, updateStatus, deleteItem, trackItemView } from '@/app/actions';
 import { useState } from 'react';
-import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide } from 'lucide-react'; // Using Lucide for cleaner icons if available, but staying consistent with existing icons for now or mixing?
+import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide, FileText } from 'lucide-react';
+import Link from 'next/link';
 // Actually the existing code uses custom SVG components (PencilIcon, etc) at bottom. 
 // I will import deleteItem and use existing pattern or imported icons. 
 // Let's use deleteItem from actions.
@@ -144,6 +145,14 @@ export function ItemCard({ item }: { item: Item }) {
                         >
                             <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
+
+                        <Link
+                            href={`/notes/new?itemId=${item.id}`}
+                            className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
+                            title="Add Note"
+                        >
+                            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </Link>
 
                         <div className="flex-1 sm:hidden"></div>
 

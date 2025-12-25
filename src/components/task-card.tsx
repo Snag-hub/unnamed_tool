@@ -6,6 +6,8 @@ import { updateTaskStatus, deleteTask } from '@/app/task-actions';
 import { EditTaskDialog } from '@/components/edit-task-dialog';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { FileText } from 'lucide-react';
+import Link from 'next/link';
 
 type Task = InferSelectModel<typeof tasks> & {
     project?: {
@@ -89,6 +91,13 @@ export function TaskCard({ task }: { task: Task }) {
                     </div>
 
                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <Link
+                            href={`/notes/new?taskId=${task.id}`}
+                            className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+                            title="Add Note"
+                        >
+                            <FileText className="h-4 w-4" />
+                        </Link>
                         <button
                             onClick={() => setShowEditDialog(true)}
                             className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"

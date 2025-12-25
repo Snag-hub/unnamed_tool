@@ -5,7 +5,8 @@ import { InferSelectModel } from 'drizzle-orm';
 import { deleteMeeting } from '@/app/meeting-actions';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { TrashIcon, VideoIcon } from 'lucide-react';
+import { TrashIcon, VideoIcon, FileText } from 'lucide-react';
+import Link from 'next/link';
 
 type Meeting = InferSelectModel<typeof meetings>;
 
@@ -71,6 +72,13 @@ export function MeetingCard({ meeting }: { meeting: Meeting }) {
                     </div>
 
                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <Link
+                            href={`/notes/new?meetingId=${meeting.id}`}
+                            className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+                            title="Add Note"
+                        >
+                            <FileText className="h-4 w-4" />
+                        </Link>
                         <button
                             onClick={() => setShowDeleteConfirm(true)}
                             className="p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors dark:hover:bg-red-900/20"
