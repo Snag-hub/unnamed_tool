@@ -14,15 +14,15 @@
 ### ⏳ Phase 1: Tasks (Action Layer)
 **Goal:** Move from "Reading" to "Doing".
 - [x] **Task Entity**: Create `tasks` schema (Title, Due Date, Type: Personal/Pro).
-- [ ] **Project Grouping**: Group tasks by Context/Project.
+- [x] **Project Grouping**: Group tasks by Context/Project.
 - [x] **Notification Integration**: Tasks fire notifications just like articles.
 - [x] **Kanban/List View**: Pending -> In Progress -> Done.
 
 ### ⏳ Phase 2: Meetings (Commitment Layer)
 **Goal:** granular time-blocking methods.
-- [ ] **Meeting Entity**: Title, Start/End Time, Link.
+- [x] **Meeting Entity**: Title, Start/End Time, Link.
 - [ ] **Prep Reminders**: "Alert me 1 hour before meeting".
-- [ ] **Interview Mode**: Track stages (Screening, Tech, Offer).
+- [x] **Interview Mode**: Track stages (Screening, Tech, Offer).
 
 ### ⏳ Phase 3: Notes (Knowledge Layer)
 **Goal:** Contextual storage.

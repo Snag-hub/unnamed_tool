@@ -2,7 +2,7 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { meetings } from '@/db/schema';
+import { meetings, reminders } from '@/db/schema';
 import { eq, and, asc, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,12 +25,15 @@ export async function createMeeting(data: {
     endTime: Date;
     type?: 'general' | 'interview';
     stage?: 'screening' | 'technical' | 'culture' | 'offer' | 'rejected';
+    reminderOffset?: number; // Minutes before
 }) {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const meetingId = uuidv4();
+
     await db.insert(meetings).values({
-        id: uuidv4(),
+        id: meetingId,
         userId,
         title: data.title,
         description: data.description,
@@ -40,6 +43,22 @@ export async function createMeeting(data: {
         type: data.type || 'general',
         stage: data.stage || null,
     });
+
+    if (data.reminderOffset && data.reminderOffset > 0) {
+        const scheduledAt = new Date(data.startTime.getTime() - data.reminderOffset * 60 * 1000);
+
+        // Only schedule if it's in the future
+        if (scheduledAt > new Date()) {
+            await db.insert(reminders).values({
+                id: uuidv4(),
+                userId,
+                title: `Reminder: ${data.title}`,
+                scheduledAt,
+                recurrence: 'none',
+                meetingId: meetingId,
+            });
+        }
+    }
 
     revalidatePath('/meetings');
 }
