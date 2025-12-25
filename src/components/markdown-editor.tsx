@@ -78,8 +78,8 @@ export function MarkdownEditor({ value, onChange, placeholder, autoFocus }: Mark
                 <button
                     onClick={() => setIsPreview(!isPreview)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isPreview
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                            : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'
                         }`}
                     type="button"
                 >
@@ -100,7 +100,7 @@ export function MarkdownEditor({ value, onChange, placeholder, autoFocus }: Mark
             {/* Editor/Preview */}
             <div className="flex-1 overflow-y-auto">
                 {isPreview ? (
-                    <div className="p-4 prose prose-sm dark:prose-invert max-w-none">
+                    <div className="p-4 prose prose-zinc dark:prose-invert max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-code:text-sm prose-pre:bg-zinc-100 dark:prose-pre:bg-zinc-900">
                         {value ? (
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {value}
