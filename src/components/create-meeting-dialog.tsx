@@ -15,6 +15,7 @@ export function CreateMeetingDialog({ onClose }: CreateMeetingDialogProps) {
     const [endTime, setEndTime] = useState('');
     const [type, setType] = useState<'general' | 'interview'>('general');
     const [stage, setStage] = useState<'screening' | 'technical' | 'culture' | 'offer' | 'rejected'>('screening');
+    const [reminderOffset, setReminderOffset] = useState<number>(0); // 0 = none, 15 = 15m before, 60 = 1h before, 1440 = 1d before
     const [isPending, setIsPending] = useState(false);
 
     const handleCreate = async () => {
@@ -30,6 +31,7 @@ export function CreateMeetingDialog({ onClose }: CreateMeetingDialogProps) {
                 endTime: new Date(endTime),
                 type,
                 stage: type === 'interview' ? stage : undefined,
+                reminderOffset,
             });
             onClose();
         } catch (error) {
@@ -136,6 +138,20 @@ export function CreateMeetingDialog({ onClose }: CreateMeetingDialogProps) {
                                 </select>
                             </div>
                         )}
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Reminder</label>
+                        <select
+                            value={reminderOffset}
+                            onChange={(e) => setReminderOffset(parseInt(e.target.value))}
+                            className="w-full rounded-lg border-0 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white px-3 py-2.5 shadow-sm ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700 focus:ring-2 focus:ring-blue-500 transition-shadow"
+                        >
+                            <option value={0}>None</option>
+                            <option value={15}>15 minutes before</option>
+                            <option value={60}>1 hour before</option>
+                            <option value={1440}>1 day before</option>
+                        </select>
                     </div>
 
                     <button

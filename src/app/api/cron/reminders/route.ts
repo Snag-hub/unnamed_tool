@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { items, users, pushSubscriptions, reminders } from '@/db/schema';
+import { items, users, pushSubscriptions, reminders, meetings } from '@/db/schema';
 import { eq, and, lt, isNotNull, sql } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
 import { NextResponse } from 'next/server';
@@ -42,27 +42,48 @@ export async function GET() {
                 )
             );
 
-        // 2. Find Due REMINDERS (General/Quick)
-        const dueReminders = await db
+        // 2. Find Due REMINDERS (General/Quick/Meetings)
+        const dueRemindersRaw = await db
             .select({
                 itemId: reminders.id,
                 title: reminders.title,
-                url: sql<string>`'/settings'`,
                 userId: reminders.userId,
                 email: users.email,
                 name: users.name,
                 type: sql<string>`'reminder'`,
                 recurrence: reminders.recurrence,
-                favicon: sql<string>`null`, // General reminders don't have external favicons
-                siteName: sql<string>`'DayOS Header'`
+                meetingId: reminders.meetingId,
+                meetingTitle: meetings.title,
+                taskId: reminders.taskId
             })
             .from(reminders)
             .innerJoin(users, eq(reminders.userId, users.id))
+            .leftJoin(meetings, eq(reminders.meetingId, meetings.id))
             .where(
                 lt(reminders.scheduledAt, now)
             );
 
-        const allDue = [...dueItems, ...dueReminders];
+        // Process reminders to format them correctly (Meeting vs General)
+        const processedReminders = dueRemindersRaw.map(r => {
+            if (r.meetingId && r.meetingTitle) {
+                return {
+                    ...r,
+                    title: `Meeting: ${r.meetingTitle}`,
+                    url: '/meetings',
+                    siteName: 'DayOS Meeting',
+                    favicon: null,
+                };
+            }
+            // General Reminder
+            return {
+                ...r,
+                url: '/settings',
+                siteName: 'DayOS Reminder',
+                favicon: null,
+            };
+        });
+
+        const allDue = [...dueItems, ...processedReminders];
 
         if (allDue.length === 0) {
             return NextResponse.json({ message: 'No due reminders found.' });
@@ -97,7 +118,7 @@ export async function GET() {
         <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #e4e4e7; border-radius: 8px;">
           <h3 style="margin: 0 0 8px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
             ${item.favicon ? `<img src="${item.favicon}" width="16" height="16" style="border-radius: 4px;" onError="this.style.display='none'"/>` : ''}
-            <a href="${item.type === 'item' ? item.url : appUrl + '/settings'}" style="color: #2563eb; text-decoration: none;">${item.title || 'Untitled Reminder'}</a>
+            <a href="${item.type === 'item' ? item.url : appUrl + item.url}" style="color: #2563eb; text-decoration: none;">${item.title || 'Untitled Reminder'}</a>
           </h3>
           <p style="margin: 0; font-size: 14px; color: #52525b;">
             ${item.siteName ? `<span style="font-weight: 500; color: #18181b;">${item.siteName}</span> • ` : ''}
@@ -148,7 +169,7 @@ export async function GET() {
                     const payload = JSON.stringify({
                         title: `DayOS: ${userGroup.items.length} Reminder(s)`,
                         body: userGroup.items.map(i => i.title).join(', '),
-                        url: userGroup.items[0].type === 'item' ? '/inbox' : '/settings',
+                        url: userGroup.items[0].type === 'item' ? '/inbox' : userGroup.items[0].url,
                     });
 
                     const pushResults = await Promise.allSettled(subs.map(sub =>
