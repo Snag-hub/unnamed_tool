@@ -5,11 +5,13 @@ import { useState } from 'react';
 
 interface CreateTaskDialogProps {
     onClose: () => void;
+    projects?: { id: string; name: string; color: string }[];
 }
 
-export function CreateTaskDialog({ onClose }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ onClose, projects = [] }: CreateTaskDialogProps) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [projectId, setProjectId] = useState('');
     const [type, setType] = useState<'personal' | 'work'>('personal');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
     const [dueDate, setDueDate] = useState('');
@@ -23,6 +25,7 @@ export function CreateTaskDialog({ onClose }: CreateTaskDialogProps) {
             await createTask({
                 title,
                 description,
+                projectId: projectId || undefined,
                 type,
                 priority,
                 dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -74,6 +77,22 @@ export function CreateTaskDialog({ onClose }: CreateTaskDialogProps) {
                             placeholder="Optional details..."
                         />
                     </div>
+
+                    {projects.length > 0 && (
+                        <div>
+                            <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Project</label>
+                            <select
+                                value={projectId}
+                                onChange={(e) => setProjectId(e.target.value)}
+                                className="w-full rounded-lg border-0 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white px-3 py-2.5 shadow-sm ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700 focus:ring-2 focus:ring-blue-500 transition-shadow"
+                            >
+                                <option value="">No Project</option>
+                                {projects.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>

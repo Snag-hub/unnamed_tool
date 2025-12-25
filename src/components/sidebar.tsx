@@ -4,11 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/clerk-buttons';
-import { Inbox, Star, Archive, Trash2, Settings, X, CheckSquare } from 'lucide-react';
+import { Inbox, Star, Archive, Trash2, Settings, X, CheckSquare, Calendar } from 'lucide-react';
 
 const navigation = [
     { name: 'Inbox', href: '/inbox', icon: Inbox },
     { name: 'Tasks', href: '/tasks', icon: CheckSquare },
+    { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'Favorites', href: '/favorites', icon: Star },
     { name: 'Archive', href: '/archive', icon: Archive },
     { name: 'Trash', href: '/trash', icon: Trash2 },

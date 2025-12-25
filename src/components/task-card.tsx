@@ -7,7 +7,12 @@ import { EditTaskDialog } from '@/components/edit-task-dialog';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 
-type Task = InferSelectModel<typeof tasks>;
+type Task = InferSelectModel<typeof tasks> & {
+    project?: {
+        name: string;
+        color: string;
+    } | null;
+};
 
 export function TaskCard({ task }: { task: Task }) {
     const [isPending, setIsPending] = useState(false);
@@ -66,6 +71,18 @@ export function TaskCard({ task }: { task: Task }) {
                                 <span className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>
                                     <CalendarIcon className="h-3 w-3" />
                                     {new Date(task.dueDate).toLocaleDateString()}
+                                </span>
+                            )}
+                            {task.project && (
+                                <span
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
+                                    style={{
+                                        backgroundColor: task.project.color + '20',
+                                        color: task.project.color
+                                    }}
+                                >
+                                    <span style={{ backgroundColor: task.project.color }} className="w-1.5 h-1.5 rounded-full" />
+                                    {task.project.name}
                                 </span>
                             )}
                         </div>

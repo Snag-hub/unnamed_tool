@@ -1,5 +1,5 @@
 import { currentUser } from '@clerk/nextjs/server';
-import { getTasks } from '@/app/task-actions';
+import { getTasks, getProjects } from '@/app/task-actions';
 import { TaskList } from '@/components/task-list';
 import Link from 'next/link';
 
@@ -20,6 +20,7 @@ export default async function TasksPage() {
     }
 
     const tasks = await getTasks();
+    const projects = await getProjects();
 
     return (
         <main className="p-4 md:p-8">
@@ -30,7 +31,7 @@ export default async function TasksPage() {
                 </p>
             </div>
 
-            <TaskList initialTasks={tasks} />
+            <TaskList initialTasks={tasks} projects={projects} />
         </main>
     );
 }

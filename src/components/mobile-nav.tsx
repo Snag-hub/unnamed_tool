@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Inbox, Star, Archive, Settings, CheckSquare } from 'lucide-react';
+import { Inbox, Star, Archive, Settings, CheckSquare, Calendar } from 'lucide-react';
 
 const navItems = [
     { href: '/inbox', label: 'Inbox', icon: Inbox },
     { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+    { href: '/meetings', label: 'Meetings', icon: Calendar },
     { href: '/favorites', label: 'Favorites', icon: Star },
     { href: '/archive', label: 'Archive', icon: Archive },
     { href: '/settings', label: 'Settings', icon: Settings },

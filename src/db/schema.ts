@@ -15,6 +15,8 @@ export const itemTypeEnum = pgEnum('item_type', ['article', 'video', 'social', '
 export const taskStatusEnum = pgEnum('task_status', ['pending', 'in_progress', 'done', 'archived']);
 export const taskTypeEnum = pgEnum('task_type', ['personal', 'work']);
 export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
+export const meetingTypeEnum = pgEnum('meeting_type', ['general', 'interview']);
+export const interviewStageEnum = pgEnum('interview_stage', ['screening', 'technical', 'culture', 'offer', 'rejected']);
 
 // Simplified users table for Clerk
 export const users = pgTable('user', {
@@ -120,6 +122,8 @@ export const reminders = pgTable('reminders', {
     .references(() => items.id, { onDelete: 'cascade' }),
   taskId: text('taskId')
     .references(() => tasks.id, { onDelete: 'cascade' }),
+  meetingId: text('meetingId')
+    .references(() => meetings.id, { onDelete: 'cascade' }),
   title: text('title'),
   scheduledAt: timestamp('scheduledAt').notNull(),
   recurrence: recurrenceEnum('recurrence').default('none').notNull(),
@@ -146,6 +150,19 @@ export const tasks = pgTable('tasks', {
   priority: taskPriorityEnum('priority').default('medium').notNull(),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export const meetings = pgTable('meetings', {
+  id: text('id').notNull().primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  link: text('link'),
+  startTime: timestamp('startTime').notNull(),
+  endTime: timestamp('endTime').notNull(),
+  type: meetingTypeEnum('type').default('general').notNull(),
+  stage: interviewStageEnum('stage'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
 });
 
 export const pushSubscriptions = pgTable('push_subscriptions', {

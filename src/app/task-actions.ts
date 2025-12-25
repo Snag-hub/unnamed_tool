@@ -11,7 +11,21 @@ export async function getTasks() {
     const { userId } = await auth();
     if (!userId) return [];
 
-    return await db.select().from(tasks).where(eq(tasks.userId, userId)).orderBy(desc(tasks.createdAt));
+    const result = await db
+        .select({
+            task: tasks,
+            project: projects
+        })
+        .from(tasks)
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .where(eq(tasks.userId, userId))
+        .orderBy(desc(tasks.createdAt));
+
+    // Flatten structure for easier consumption: { ...task, project: { ...project } }
+    return result.map(({ task, project }) => ({
+        ...task,
+        project: project || null
+    }));
 }
 
 export async function createTask(data: {
