@@ -7,7 +7,7 @@ import { Eye, Edit3, Bold, Italic, Link as LinkIcon, List } from 'lucide-react';
 
 type MarkdownEditorProps = {
     value: string;
-    onChange: (value: string);
+    onChange: (value: string) => void;
     placeholder?: string;
     autoFocus?: boolean;
 };
@@ -78,8 +78,8 @@ export function MarkdownEditor({ value, onChange, placeholder, autoFocus }: Mark
                 <button
                     onClick={() => setIsPreview(!isPreview)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isPreview
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                            : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'
                         }`}
                     type="button"
                 >
