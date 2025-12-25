@@ -58,11 +58,9 @@ export function TaskCard({ task }: { task: Task }) {
                                 </span>
                             )}
 
-                            {task.type !== 'personal' && (
-                                <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 uppercase text-[10px] font-bold">
-                                    {task.type}
-                                </span>
-                            )}
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 uppercase text-[10px] font-bold">
+                                {task.type}
+                            </span>
 
                             {task.dueDate && (
                                 <span className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>
@@ -73,7 +71,7 @@ export function TaskCard({ task }: { task: Task }) {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={() => setShowEditDialog(true)}
                             className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
