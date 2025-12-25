@@ -269,6 +269,22 @@ export async function deleteItem(itemId: string) {
 }
 // ... deleteItem ...
 
+export async function emptyTrash() {
+    const { userId } = await auth();
+    if (!userId) throw new Error('Unauthorized');
+
+    await db
+        .delete(items)
+        .where(
+            and(
+                eq(items.userId, userId),
+                eq(items.status, 'trash')
+            )
+        );
+
+    revalidatePath('/trash');
+}
+
 export async function createItem(url: string, title?: string, description?: string) {
     const { userId } = await auth();
     if (!userId) {

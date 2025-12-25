@@ -52,4 +52,4 @@
 
 ### Polish
 - [x] **Empty States**: "All caught up" screens for empty Inbox/Archives.
-- [ ] **Settings**: Add toggle for "Email vs Push" preference (Granular control).
+- [x] **Settings**: Add toggle for "Email vs Push" preference (Granular control).

@@ -2,8 +2,12 @@
 
 import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
-import { toggleFavorite, updateStatus } from '@/app/actions';
+import { toggleFavorite, updateStatus, deleteItem } from '@/app/actions';
 import { useState } from 'react';
+import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide } from 'lucide-react'; // Using Lucide for cleaner icons if available, but staying consistent with existing icons for now or mixing?
+// Actually the existing code uses custom SVG components (PencilIcon, etc) at bottom. 
+// I will import deleteItem and use existing pattern or imported icons. 
+// Let's use deleteItem from actions.
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ReminderScheduler } from '@/components/reminder-scheduler';
 import { EditItemDialog } from '@/components/edit-item-dialog';
@@ -34,7 +38,17 @@ export function ItemCard({ item }: { item: Item }) {
     const handleDeleteCallback = async () => {
         setShowDeleteConfirm(false);
         setIsPending(true);
-        await updateStatus(item.id, 'trash');
+        if (item.status === 'trash') {
+            await deleteItem(item.id);
+        } else {
+            await updateStatus(item.id, 'trash');
+        }
+        setIsPending(false);
+    };
+
+    const handleRestore = async () => {
+        setIsPending(true);
+        await updateStatus(item.id, 'inbox');
         setIsPending(false);
     };
 
@@ -132,12 +146,23 @@ export function ItemCard({ item }: { item: Item }) {
 
                         <div className="flex-1 sm:hidden"></div>
 
-                        <button
-                            onClick={handleArchive}
-                            className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                        >
-                            <ArchiveIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
+                        {item.status === 'trash' ? (
+                            <button
+                                onClick={handleRestore}
+                                className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400 transition-colors"
+                                title="Restore"
+                            >
+                                <RestoreIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleArchive}
+                                className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
+                                title={item.status === 'archived' ? 'Unarchive' : 'Archive'}
+                            >
+                                <ArchiveIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+                        )}
 
                         <button
                             onClick={(e) => {
@@ -154,9 +179,9 @@ export function ItemCard({ item }: { item: Item }) {
 
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
-                title="Move to Trash?"
-                description="This item will be moved to trash. You can restore it later if needed."
-                confirmText="Move to Trash"
+                title={item.status === 'trash' ? "Delete Permanently?" : "Move to Trash?"}
+                description={item.status === 'trash' ? "This action cannot be undone." : "This item will be moved to trash. You can restore it later if needed."}
+                confirmText={item.status === 'trash' ? "Delete Forever" : "Move to Trash"}
                 variant="danger"
                 onConfirm={handleDeleteCallback}
                 onCancel={() => setShowDeleteConfirm(false)}
@@ -219,6 +244,14 @@ function ClockIcon({ className }: { className?: string }) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    )
+}
+
+function RestoreIcon({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
         </svg>
     )
 }
