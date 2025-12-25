@@ -12,6 +12,9 @@ import type { AdapterAccount } from 'next-auth/adapters';
 // Enums
 export const statusEnum = pgEnum('status', ['inbox', 'reading', 'archived', 'trash']);
 export const itemTypeEnum = pgEnum('item_type', ['article', 'video', 'social', 'other']);
+export const taskStatusEnum = pgEnum('task_status', ['pending', 'in_progress', 'done', 'archived']);
+export const taskTypeEnum = pgEnum('task_type', ['personal', 'work']);
+export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
 
 // Simplified users table for Clerk
 export const users = pgTable('user', {
@@ -115,10 +118,34 @@ export const reminders = pgTable('reminders', {
     .references(() => users.id, { onDelete: 'cascade' }),
   itemId: text('itemId')
     .references(() => items.id, { onDelete: 'cascade' }),
+  taskId: text('taskId')
+    .references(() => tasks.id, { onDelete: 'cascade' }),
   title: text('title'),
   scheduledAt: timestamp('scheduledAt').notNull(),
   recurrence: recurrenceEnum('recurrence').default('none').notNull(),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
+});
+
+export const projects = pgTable('projects', {
+  id: text('id').notNull().primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  color: text('color').notNull().default('#000000'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+});
+
+export const tasks = pgTable('tasks', {
+  id: text('id').notNull().primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  projectId: text('projectId').references(() => projects.id, { onDelete: 'set null' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  dueDate: timestamp('dueDate'),
+  type: taskTypeEnum('type').default('personal').notNull(),
+  status: taskStatusEnum('status').default('pending').notNull(),
+  priority: taskPriorityEnum('priority').default('medium').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 });
 
 export const pushSubscriptions = pgTable('push_subscriptions', {

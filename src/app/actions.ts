@@ -92,19 +92,21 @@ export async function addReminder(
     date: Date,
     recurrence: 'none' | 'daily' | 'weekly' | 'monthly' = 'none',
     itemId?: string,
-    title?: string
+    title?: string,
+    taskId?: string
 ) {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
-    if (!itemId && !title) {
-        throw new Error('Must provide either an Item ID or a Title for the reminder.');
+    if (!itemId && !title && !taskId) {
+        throw new Error('Must provide either an Item ID, Task ID, or a Title for the reminder.');
     }
 
     await db.insert(reminders).values({
         id: uuidv4(),
         userId,
         itemId: itemId || null, // Ensure null if undefined/empty
+        taskId: taskId || null,
         title: title || null,
         scheduledAt: date,
         recurrence,
