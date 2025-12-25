@@ -60,11 +60,13 @@ export default async function SettingsPage() {
             </div>
 
             {/* Settings Content */}
-            <SettingsClient
-                apiToken={apiToken}
-                userId={clerkUser.id}
-                initialPreferences={preferences}
-            />
+            <div className="max-w-4xl mx-auto w-full">
+                <SettingsClient
+                    apiToken={apiToken}
+                    userId={clerkUser.id}
+                    initialPreferences={preferences}
+                />
+            </div>
         </main>
     );
 }
