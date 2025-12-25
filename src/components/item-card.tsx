@@ -2,7 +2,7 @@
 
 import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
-import { toggleFavorite, updateStatus, deleteItem } from '@/app/actions';
+import { toggleFavorite, updateStatus, deleteItem, trackItemView } from '@/app/actions';
 import { useState } from 'react';
 import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide } from 'lucide-react'; // Using Lucide for cleaner icons if available, but staying consistent with existing icons for now or mixing?
 // Actually the existing code uses custom SVG components (PencilIcon, etc) at bottom. 
@@ -109,6 +109,7 @@ export function ItemCard({ item }: { item: Item }) {
                             href={item.url}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => trackItemView(item.id)}
                             className="block text-sm sm:text-base font-semibold leading-tight text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-400 line-clamp-2"
                         >
                             {item.title || item.url}

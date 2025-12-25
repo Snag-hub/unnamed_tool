@@ -402,3 +402,58 @@ export async function updatePreferences(data: { emailNotifications: boolean; pus
 
     revalidatePath('/settings');
 }
+
+// Analytics: Track when an item is viewed
+export async function trackItemView(itemId: string) {
+    const { userId } = await auth();
+    if (!userId) return; // Silent fail for unauthenticated users
+
+    try {
+        await db
+            .update(items)
+            .set({
+                viewCount: sql`${items.viewCount} + 1`,
+                lastViewedAt: new Date(),
+            })
+            .where(and(eq(items.id, itemId), eq(items.userId, userId)));
+    } catch (error) {
+        // Silent fail - don't block UI for analytics
+        console.error('Failed to track item view:', error);
+    }
+}
+
+// Analytics: Get user stats
+export async function getUserStats() {
+    const { userId } = await auth();
+    if (!userId) throw new Error('Unauthorized');
+
+    const stats = await db
+        .select({
+            totalSaved: sql<number>`count(*)::int`,
+            totalRead: sql<number>`count(*) filter (where ${items.viewCount} > 0)::int`,
+        })
+        .from(items)
+        .where(eq(items.userId, userId));
+
+    const mostViewed = await db
+        .select({
+            id: items.id,
+            title: items.title,
+            url: items.url,
+            viewCount: items.viewCount,
+            favicon: items.favicon,
+        })
+        .from(items)
+        .where(and(eq(items.userId, userId), sql`${items.viewCount} > 0`))
+        .orderBy(desc(items.viewCount))
+        .limit(5);
+
+    return {
+        totalSaved: stats[0]?.totalSaved || 0,
+        totalRead: stats[0]?.totalRead || 0,
+        readPercentage: stats[0]?.totalSaved > 0
+            ? Math.round((stats[0].totalRead / stats[0].totalSaved) * 100)
+            : 0,
+        mostViewed,
+    };
+}

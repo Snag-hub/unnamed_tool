@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import SettingsClient from './client';
 import Link from 'next/link';
+import { getUserStats } from '@/app/actions';
 
 export default async function SettingsPage() {
     const clerkUser = await currentUser();
@@ -15,6 +16,12 @@ export default async function SettingsPage() {
 
     let apiToken: string | null = null;
     let preferences = { emailNotifications: true, pushNotifications: true };
+    let stats: Awaited<ReturnType<typeof getUserStats>> = {
+        totalSaved: 0,
+        totalRead: 0,
+        readPercentage: 0,
+        mostViewed: []
+    };
 
     try {
         // Try to find user in our database
@@ -43,6 +50,9 @@ export default async function SettingsPage() {
                 pushNotifications: result[0].pushNotifications,
             };
         }
+
+        // Fetch analytics stats
+        stats = await getUserStats();
     } catch (error) {
         console.error('Error fetching/creating user:', error);
     }
@@ -65,6 +75,7 @@ export default async function SettingsPage() {
                     apiToken={apiToken}
                     userId={clerkUser.id}
                     initialPreferences={preferences}
+                    initialStats={stats}
                 />
             </div>
         </main>

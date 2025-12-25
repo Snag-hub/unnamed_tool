@@ -4,6 +4,7 @@ import { eq, and, lt, isNotNull, sql } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
+import { withNotificationLogging } from '@/lib/notification-logger';
 
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
@@ -157,55 +158,56 @@ export async function GET() {
       `;
 
             if (userGroup.emailNotifications) {
-                try {
-                    await sendEmail({
-                        to: email,
-                        subject: `DayOS: ${userGroup.items.length} Reminder(s)`,
-                        html,
-                    });
-                } catch (emailError) {
-                    console.error(`Failed to send email to ${email}:`, emailError);
-                }
+                const userId = userGroup.items[0].userId;
+                await withNotificationLogging(
+                    userId,
+                    'email',
+                    email,
+                    async () => {
+                        await sendEmail({
+                            to: email,
+                            subject: `DayOS: ${userGroup.items.length} Reminder(s)`,
+                            html,
+                        });
+                    },
+                    { reminderCount: userGroup.items.length }
+                );
             } else {
                 console.log(`Skipping email for ${email} (User Preference)`);
             }
 
             // Push Notifications
-            // Push Notifications
             if (userGroup.pushNotifications) {
-                try {
-                    const userId = userGroup.items[0].userId;
-                    const subs = await db
-                        .select()
-                        .from(pushSubscriptions)
-                        .where(eq(pushSubscriptions.userId, userId));
+                const userId = userGroup.items[0].userId;
+                const subs = await db
+                    .select()
+                    .from(pushSubscriptions)
+                    .where(eq(pushSubscriptions.userId, userId));
 
-                    console.log(`Checking push for user ${userId}: Found ${subs.length} subscriptions`);
+                console.log(`Checking push for user ${userId}: Found ${subs.length} subscriptions`);
 
-                    if (subs.length > 0) {
-                        const payload = JSON.stringify({
-                            title: `DayOS: ${userGroup.items.length} Reminder(s)`,
-                            body: userGroup.items.map(i => i.title).join(', '),
-                            url: userGroup.items[0].type === 'item' ? '/inbox' : userGroup.items[0].url,
-                        });
+                if (subs.length > 0) {
+                    const payload = JSON.stringify({
+                        title: `DayOS: ${userGroup.items.length} Reminder(s)`,
+                        body: userGroup.items.map(i => i.title).join(', '),
+                        url: userGroup.items[0].type === 'item' ? '/inbox' : userGroup.items[0].url,
+                    });
 
-                        const pushResults = await Promise.allSettled(subs.map(sub =>
-                            webpush.sendNotification({
-                                endpoint: sub.endpoint,
-                                keys: { p256dh: sub.p256dh, auth: sub.auth }
-                            }, payload)
-                        ));
-
-                        pushResults.forEach((res, idx) => {
-                            if (res.status === 'rejected') {
-                                console.error(`Push sub ${idx} failed:`, res.reason);
-                            } else {
-                                console.log(`Push sub ${idx} success`);
-                            }
-                        });
+                    // Send to each subscription with logging
+                    for (const sub of subs) {
+                        await withNotificationLogging(
+                            userId,
+                            'push',
+                            sub.endpoint,
+                            async () => {
+                                await webpush.sendNotification({
+                                    endpoint: sub.endpoint,
+                                    keys: { p256dh: sub.p256dh, auth: sub.auth }
+                                }, payload);
+                            },
+                            { reminderCount: userGroup.items.length }
+                        );
                     }
-                } catch (error) {
-                    console.error('Push Logic Error:', error);
                 }
             } else {
                 console.log(`Skipping push for ${email} (User Preference)`);

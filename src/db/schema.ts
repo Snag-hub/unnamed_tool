@@ -103,6 +103,10 @@ export const items = pgTable('items', {
   author: text('author'),
   duration: integer('duration'), // in seconds
 
+  // Analytics
+  viewCount: integer('viewCount').default(0).notNull(),
+  lastViewedAt: timestamp('lastViewedAt'),
+
   read: boolean('read') // Keeping for backward compatibility, but 'status' replaces this logic
     .notNull()
     .default(false),

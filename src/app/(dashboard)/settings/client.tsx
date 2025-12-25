@@ -11,14 +11,29 @@ import { reminders } from '@/db/schema';
 
 type Reminder = InferSelectModel<typeof reminders>;
 
+type UserStats = {
+    totalSaved: number;
+    totalRead: number;
+    readPercentage: number;
+    mostViewed: Array<{
+        id: string;
+        title: string | null;
+        url: string;
+        viewCount: number;
+        favicon: string | null;
+    }>;
+};
+
 export default function SettingsClient({
     apiToken,
     userId,
-    initialPreferences
+    initialPreferences,
+    initialStats
 }: {
     apiToken?: string | null;
     userId: string;
     initialPreferences?: { emailNotifications: boolean; pushNotifications: boolean };
+    initialStats?: UserStats;
 }) {
     // Token State
     const [token, setToken] = useState(apiToken);
@@ -245,6 +260,60 @@ export default function SettingsClient({
                     </div>
                 </div>
             </section>
+
+            {/* Analytics Section */}
+            {initialStats && (
+                <section className="relative overflow-hidden rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-black/20 backdrop-blur-xl shadow-sm">
+                    <div className="p-6 sm:p-8">
+                        <h2 className="text-xl font-semibold text-zinc-900 dark:text-white flex items-center gap-2 mb-6">
+                            <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-1.5 rounded-lg">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                            </span>
+                            Your Stats
+                        </h2>
+
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Saved</p>
+                                <p className="text-2xl font-bold text-zinc-900 dark:text-white mt-1">{initialStats.totalSaved}</p>
+                            </div>
+                            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Read</p>
+                                <p className="text-2xl font-bold text-zinc-900 dark:text-white mt-1">{initialStats.totalRead}</p>
+                            </div>
+                            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400">Read Rate</p>
+                                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">{initialStats.readPercentage}%</p>
+                            </div>
+                        </div>
+
+                        {/* Most Viewed */}
+                        {initialStats.mostViewed.length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">Most Viewed</h3>
+                                <div className="space-y-2">
+                                    {initialStats.mostViewed.map((item) => (
+                                        <a
+                                            key={item.id}
+                                            href={item.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:border-purple-200 dark:hover:border-purple-900/50 transition-colors"
+                                        >
+                                            {item.favicon && (
+                                                <img src={item.favicon} alt="" className="w-4 h-4 rounded" />
+                                            )}
+                                            <span className="flex-1 text-sm text-zinc-900 dark:text-zinc-100 truncate">{item.title || item.url}</span>
+                                            <span className="text-xs font-medium text-purple-600 dark:text-purple-400">{item.viewCount} views</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )}
 
             {/* API Token Section - Glass Card */}
             <section className="relative overflow-hidden rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-black/20 backdrop-blur-xl shadow-sm">
