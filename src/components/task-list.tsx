@@ -7,7 +7,8 @@ import { CreateTaskDialog } from './create-task-dialog';
 import { CreateProjectDialog } from './create-project-dialog';
 import { ManageProjectsDialog } from './manage-projects-dialog';
 import { useState } from 'react';
-import { PlusIcon, FolderPlus, Settings2 } from 'lucide-react';
+import { PlusIcon, FolderPlus, Settings2, CheckSquare } from 'lucide-react';
+import { EmptyState } from './empty-state';
 
 type Task = InferSelectModel<typeof tasks> & {
     project?: {
@@ -55,30 +56,42 @@ export function TaskList({ initialTasks, projects = [] }: { initialTasks: Task[]
             </div>
 
             <div className="space-y-6">
-                {/* Pending Section */}
-                <div>
-                    <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Pending</h2>
-                    {pending.length === 0 ? (
-                        <p className="text-sm text-zinc-500 italic">No pending tasks.</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {pending.map(task => (
-                                <TaskCard key={task.id} task={task} />
-                            ))}
+                {initialTasks.length === 0 ? (
+                    <EmptyState
+                        icon={CheckSquare}
+                        title="No tasks yet"
+                        description="Create a task to start tracking your work."
+                        actionLabel="Create Task"
+                        onAction={() => setShowCreateDialog(true)}
+                    />
+                ) : (
+                    <>
+                        {/* Pending Section */}
+                        <div>
+                            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Pending</h2>
+                            {pending.length === 0 ? (
+                                <p className="text-sm text-zinc-500 italic">No pending tasks. All caught up!</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {pending.map(task => (
+                                        <TaskCard key={task.id} task={task} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
 
-                {/* Done Section */}
-                {done.length > 0 && (
-                    <div>
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Completed</h2>
-                        <div className="space-y-3 opacity-60">
-                            {done.map(task => (
-                                <TaskCard key={task.id} task={task} />
-                            ))}
-                        </div>
-                    </div>
+                        {/* Done Section */}
+                        {done.length > 0 && (
+                            <div>
+                                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Completed</h2>
+                                <div className="space-y-3 opacity-60">
+                                    {done.map(task => (
+                                        <TaskCard key={task.id} task={task} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

@@ -6,7 +6,8 @@ import { ItemCard } from '@/components/item-card';
 import { fetchItems } from '@/app/actions';
 import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Inbox, LucideIcon } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 
 type Item = InferSelectModel<typeof items>;
 
@@ -17,6 +18,7 @@ interface ItemGridProps {
     isFavorite?: boolean;
     emptyTitle?: string;
     emptyDescription?: string;
+    emptyIcon?: LucideIcon;
     search?: string;
     type?: 'all' | 'article' | 'video';
 }
@@ -28,6 +30,7 @@ export function ItemGrid({
     isFavorite,
     emptyTitle = 'No items found',
     emptyDescription = 'Try adjusting your filters or add some new items.',
+    emptyIcon = Inbox,
     search,
     type,
 }: ItemGridProps) {
@@ -85,10 +88,11 @@ export function ItemGrid({
 
     if (items.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 py-24 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
-                <p className="text-lg font-medium text-zinc-900 dark:text-zinc-100">{emptyTitle}</p>
-                <p className="text-zinc-500 dark:text-zinc-400">{emptyDescription}</p>
-            </div>
+            <EmptyState
+                icon={emptyIcon}
+                title={emptyTitle}
+                description={emptyDescription}
+            />
         );
     }
 
