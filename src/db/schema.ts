@@ -183,3 +183,23 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   auth: text('auth').notNull(),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 });
+
+// Notes table
+export const notes = pgTable('notes', {
+  id: text('id')
+    .notNull()
+    .primaryKey(),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title'),
+  content: text('content').notNull(),
+
+  // Optional attachments (one of these, or none for standalone notes)
+  taskId: text('taskId').references(() => tasks.id, { onDelete: 'cascade' }),
+  meetingId: text('meetingId').references(() => meetings.id, { onDelete: 'cascade' }),
+  itemId: text('itemId').references(() => items.id, { onDelete: 'cascade' }),
+
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
