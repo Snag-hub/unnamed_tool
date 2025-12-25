@@ -29,22 +29,69 @@ export default function SettingsClient({
     const [pushEnabled, setPushEnabled] = useState(initialPreferences?.pushNotifications ?? true);
 
     const togglePreference = async (type: 'email' | 'push') => {
-        const newEmail = type === 'email' ? !emailEnabled : emailEnabled;
-        const newPush = type === 'push' ? !pushEnabled : pushEnabled;
+        const newValue = type === 'email' ? !emailEnabled : !pushEnabled;
 
-        setEmailEnabled(newEmail);
-        setPushEnabled(newPush);
+        // Optimistic Update
+        if (type === 'email') setEmailEnabled(newValue);
+        else setPushEnabled(newValue);
 
         try {
+            // Helper to subscribe to push notifications
+            const subscribeToPush = async () => {
+                if (!('serviceWorker' in navigator)) throw new Error('Service Worker not supported');
+
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') throw new Error('Permission denied');
+
+                let registration = await navigator.serviceWorker.getRegistration();
+                if (!registration) {
+                    registration = await navigator.serviceWorker.register('/sw.js');
+                }
+
+                await navigator.serviceWorker.ready;
+                registration = await navigator.serviceWorker.getRegistration();
+
+                if (!registration?.active) throw new Error('Service Worker not active');
+
+                const urlBase64ToUint8Array = (base64String: string) => {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                };
+
+                const key = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!);
+                const sub = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: key
+                });
+
+                const { savePushSubscription } = await import('@/app/actions');
+                await savePushSubscription(JSON.stringify(sub));
+            };
+
+            // If enabling push, ensure subscription exists
+            if (type === 'push' && newValue === true) {
+                await subscribeToPush();
+            }
+
+            // Update preference in DB
             await updatePreferences({
-                emailNotifications: newEmail,
-                pushNotifications: newPush,
+                emailNotifications: type === 'email' ? newValue : emailEnabled,
+                pushNotifications: type === 'push' ? newValue : pushEnabled,
             });
         } catch (error) {
             console.error('Failed to update preferences', error);
-            // Revert on error
-            setEmailEnabled(emailEnabled);
-            setPushEnabled(pushEnabled);
+            // Revert state on error
+            if (type === 'email') setEmailEnabled(!newValue);
+            else setPushEnabled(!newValue);
+
+            // Optional: Show error toast/alert
+            alert(error instanceof Error ? error.message : 'Failed to update settings');
         }
     };
     const [copied, setCopied] = useState(false);
@@ -283,97 +330,7 @@ export default function SettingsClient({
                 </div>
             </section>
 
-            {/* Push Notification Section */}
-            <section className="relative overflow-hidden rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-black/20 backdrop-blur-xl shadow-sm">
-                <div className="p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
-                                <span className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-1.5 rounded-lg">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                                </span>
-                                Push Notifications
-                            </h2>
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-lg leading-relaxed">
-                                Get instant alerts for your smart reminders directly on your device.
-                            </p>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                setTestStatus('Checking Permission...');
-                                if (!('serviceWorker' in navigator)) return setTestStatus('Error: Service Worker not supported');
 
-                                const perm = await Notification.requestPermission();
-                                if (perm !== 'granted') return setTestStatus('Error: Permission denied');
-
-                                try {
-                                    setTestStatus('Checking Service Worker...');
-
-                                    // 1. Ensure SW is registered
-                                    let registration = await navigator.serviceWorker.getRegistration();
-                                    if (!registration) {
-                                        setTestStatus('Registering Service Worker...');
-                                        registration = await navigator.serviceWorker.register('/sw.js');
-                                    }
-
-                                    setTestStatus('Waiting for Active SW...');
-                                    await navigator.serviceWorker.ready;
-
-                                    // 2. Refresh registration handle
-                                    registration = await navigator.serviceWorker.getRegistration();
-
-                                    if (!registration || !registration.active) {
-                                        throw new Error('Service Worker registered but not active. Try reloading.');
-                                    }
-
-                                    setTestStatus('SW Ready. Converting key...');
-
-                                    const urlBase64ToUint8Array = (base64String: string) => {
-                                        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-                                        const base64 = (base64String + padding)
-                                            .replace(/\-/g, '+')
-                                            .replace(/_/g, '/');
-                                        const rawData = window.atob(base64);
-                                        const outputArray = new Uint8Array(rawData.length);
-                                        for (let i = 0; i < rawData.length; ++i) {
-                                            outputArray[i] = rawData.charCodeAt(i);
-                                        }
-                                        return outputArray;
-                                    };
-
-                                    const key = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!);
-
-                                    setTestStatus('Subscribing to PushManager...');
-                                    const sub = await registration.pushManager.subscribe({
-                                        userVisibleOnly: true,
-                                        applicationServerKey: key
-                                    });
-
-                                    // Dynamically import to avoid server-side issues if any
-                                    setTestStatus('Saving subscription...');
-                                    const { savePushSubscription: saveSub } = await import('@/app/actions');
-
-                                    await saveSub(JSON.stringify(sub));
-                                    setTestStatus('Success: Subscribed! Now try "Send Test".');
-                                } catch (e) {
-                                    console.error(e);
-                                    setTestStatus('Error Subscribing: ' + e);
-                                }
-                            }}
-                            className="shrink-0 px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
-                        >
-                            Enable Notifications
-                        </button>
-                    </div>
-
-                    {/* Status Log */}
-                    {testStatus && (
-                        <div className={`mt-4 p-3 rounded-lg text-sm font-medium ${testStatus.startsWith('Error') ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>
-                            {testStatus}
-                        </div>
-                    )}
-                </div>
-            </section >
 
             {/* General Reminders Section */}
             < section className="relative overflow-hidden rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-black/20 backdrop-blur-xl shadow-sm" >
