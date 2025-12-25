@@ -123,21 +123,21 @@ export function TimelineEventCard({ event }: TimelineEventCardProps) {
                 ${event.type === 'item' && event.url ? 'cursor-pointer hover:shadow-md' : ''}
                 ${event.type === 'free-time' ? 'opacity-60' : ''}
                 ${isPending ? 'opacity-50 pointer-events-none' : ''}
-                min-w-0 max-w-full
+                w-[90%]
             `}
         >
-            <div className="flex items-start gap-2 sm:gap-3 min-w-0 max-w-full">
+            <div className="flex items-start gap-2 sm:gap-3">
                 {/* Icon */}
                 <div className={`p-1 sm:p-1.5 rounded ${colors.iconBg} ${colors.text} flex-shrink-0`}>
                     {icon}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                    <div className="flex items-start justify-between gap-2 min-w-0 max-w-full">
-                        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                            {/* Title */}
-                            <h4 className={`font-medium text-xs sm:text-sm ${colors.text} truncate max-w-full`}>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                            {/* Title - Allow wrapping */}
+                            <h4 className={`font-medium text-xs sm:text-sm ${colors.text} break-words`}>
                                 {event.title}
                             </h4>
 
@@ -158,11 +158,11 @@ export function TimelineEventCard({ event }: TimelineEventCardProps) {
 
                             {/* Metadata */}
                             {event.metadata?.siteName && (
-                                <div className="flex items-center gap-1 mt-0.5 sm:mt-1 min-w-0 max-w-full overflow-hidden">
+                                <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
                                     {event.favicon && (
                                         <img src={event.favicon} alt="" className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded flex-shrink-0" />
                                     )}
-                                    <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                    <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 break-words">
                                         {event.metadata.siteName}
                                     </span>
                                 </div>
@@ -173,10 +173,10 @@ export function TimelineEventCard({ event }: TimelineEventCardProps) {
                                     href={event.metadata.meetingLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline truncate max-w-full"
+                                    className="inline-flex items-center gap-1 mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <span className="truncate">Join meeting</span>
+                                    <span>Join meeting</span>
                                     <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
                                 </a>
                             )}
