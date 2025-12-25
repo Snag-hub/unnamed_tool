@@ -21,7 +21,9 @@
 ### ⏳ Phase 2: Meetings (Commitment Layer)
 **Goal:** granular time-blocking methods.
 - [x] **Meeting Entity**: Title, Start/End Time, Link.
-- [ ] **Prep Reminders**: "Alert me 1 hour before meeting".
+- [ ] **Prep Reminders**: 
+    - [ ] Defaults: 1d, 1h, 30m, 10m, 5m, 2m before (Auto-created).
+    - [ ] Custom: Ability to add specific time-based reminders.
 - [x] **Interview Mode**: Track stages (Screening, Tech, Offer).
 
 ### ⏳ Phase 3: Notes (Knowledge Layer)

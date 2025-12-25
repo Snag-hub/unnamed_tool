@@ -15,8 +15,22 @@ export function CreateMeetingDialog({ onClose }: CreateMeetingDialogProps) {
     const [endTime, setEndTime] = useState('');
     const [type, setType] = useState<'general' | 'interview'>('general');
     const [stage, setStage] = useState<'screening' | 'technical' | 'culture' | 'offer' | 'rejected'>('screening');
-    const [reminderOffset, setReminderOffset] = useState<number>(0); // 0 = none, 15 = 15m before, 60 = 1h before, 1440 = 1d before
+    const [reminderOffset, setReminderOffset] = useState<number>(0);
+    const [customReminders, setCustomReminders] = useState<number[]>([]);
+    const [newCustomMinutes, setNewCustomMinutes] = useState('');
     const [isPending, setIsPending] = useState(false);
+
+    const addCustomReminder = () => {
+        const mins = parseInt(newCustomMinutes);
+        if (mins > 0 && !customReminders.includes(mins)) {
+            setCustomReminders([...customReminders, mins].sort((a, b) => b - a));
+            setNewCustomMinutes('');
+        }
+    };
+
+    const removeCustomReminder = (mins: number) => {
+        setCustomReminders(customReminders.filter(m => m !== mins));
+    };
 
     const handleCreate = async () => {
         if (!title.trim() || !startTime || !endTime) return;
@@ -32,6 +46,7 @@ export function CreateMeetingDialog({ onClose }: CreateMeetingDialogProps) {
                 type,
                 stage: type === 'interview' ? stage : undefined,
                 reminderOffset,
+                customReminders,
             });
             onClose();
         } catch (error) {
@@ -141,17 +156,37 @@ export function CreateMeetingDialog({ onClose }: CreateMeetingDialogProps) {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Reminder</label>
-                        <select
-                            value={reminderOffset}
-                            onChange={(e) => setReminderOffset(parseInt(e.target.value))}
-                            className="w-full rounded-lg border-0 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white px-3 py-2.5 shadow-sm ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700 focus:ring-2 focus:ring-blue-500 transition-shadow"
-                        >
-                            <option value={0}>None</option>
-                            <option value={15}>15 minutes before</option>
-                            <option value={60}>1 hour before</option>
-                            <option value={1440}>1 day before</option>
-                        </select>
+                        <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Notifications</label>
+                        <div className="text-xs text-zinc-400 mb-2">
+                            Default: 1d, 1h, 30m, 10m, 5m, 2m before.
+                        </div>
+
+                        <div className="flex gap-2 mb-2">
+                            <input
+                                type="number"
+                                value={newCustomMinutes}
+                                onChange={(e) => setNewCustomMinutes(e.target.value)}
+                                placeholder="Add custom (mins)"
+                                className="flex-1 rounded-lg border-0 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white px-3 py-2 shadow-sm ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700 focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                                onClick={addCustomReminder}
+                                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                            >
+                                Add
+                            </button>
+                        </div>
+
+                        {customReminders.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {customReminders.map(mins => (
+                                    <span key={mins} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-medium">
+                                        {mins}m
+                                        <button onClick={() => removeCustomReminder(mins)} className="hover:text-blue-900 dark:hover:text-blue-100">×</button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <button
