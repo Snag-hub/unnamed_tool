@@ -6,6 +6,7 @@ import { notes } from '@/db/schema';
 import { eq, and, desc, or, ilike } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
+import { noteSchema } from '@/lib/validations';
 
 // Create a new note
 export async function createNote(data: {
@@ -18,16 +19,17 @@ export async function createNote(data: {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const validated = noteSchema.parse(data);
     const noteId = uuidv4();
 
     await db.insert(notes).values({
         id: noteId,
         userId,
-        title: data.title || null,
-        content: data.content,
-        taskId: data.taskId || null,
-        meetingId: data.meetingId || null,
-        itemId: data.itemId || null,
+        title: validated.title || null,
+        content: validated.content,
+        taskId: validated.taskId || null,
+        meetingId: validated.meetingId || null,
+        itemId: validated.itemId || null,
         createdAt: new Date(),
         updatedAt: new Date(),
     });
@@ -54,16 +56,21 @@ export async function updateNote(
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const validated = noteSchema.partial().parse(data);
+
     await db
         .update(notes)
         .set({
-            ...data,
+            ...validated,
             updatedAt: new Date(),
         })
         .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
 
     revalidatePath('/notes');
     revalidatePath(`/notes/${noteId}`);
+    revalidatePath('/tasks');
+    revalidatePath('/meetings');
+    revalidatePath('/inbox');
 }
 
 // Delete a note

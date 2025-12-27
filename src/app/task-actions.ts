@@ -6,6 +6,7 @@ import { tasks, projects, notes } from '@/db/schema';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
+import { taskSchema } from '@/lib/validations';
 
 export async function getTasks() {
     const { userId } = await auth();
@@ -45,16 +46,18 @@ export async function createTask(data: {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const validated = taskSchema.parse(data);
+
     const newTask = await db.insert(tasks).values({
         id: uuidv4(),
         userId,
-        title: data.title,
-        description: data.description,
-        projectId: data.projectId,
-        dueDate: data.dueDate,
-        type: data.type || 'personal',
-        status: 'pending',
-        priority: data.priority || 'medium',
+        title: validated.title,
+        description: validated.description,
+        projectId: validated.projectId,
+        dueDate: validated.dueDate,
+        type: validated.type,
+        status: validated.status,
+        priority: validated.priority,
     }).returning();
 
     revalidatePath('/tasks');
@@ -88,8 +91,10 @@ export async function updateTask(taskId: string, data: {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const validated = taskSchema.partial().parse(data);
+
     await db.update(tasks).set({
-        ...data,
+        ...validated,
         updatedAt: new Date()
     }).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
 

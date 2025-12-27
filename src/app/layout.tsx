@@ -36,6 +36,8 @@ export const viewport = {
   userScalable: false, // Optional: prevents zooming on mobile inputs
 };
 
+import { Omnisearch } from "@/components/omnisearch";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -47,6 +49,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
+          <Omnisearch />
           {children}
         </body>
       </html>

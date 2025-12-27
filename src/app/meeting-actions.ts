@@ -6,6 +6,7 @@ import { meetings, reminders, notes } from '@/db/schema';
 import { eq, and, asc, desc, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
+import { meetingSchema } from '@/lib/validations';
 
 export async function getMeetings() {
     const { userId } = await auth();
@@ -41,18 +42,19 @@ export async function createMeeting(data: {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const validated = meetingSchema.parse(data);
     const meetingId = uuidv4();
 
     await db.insert(meetings).values({
         id: meetingId,
         userId,
-        title: data.title,
-        description: data.description,
-        link: data.link,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        type: data.type || 'general',
-        stage: data.stage || null,
+        title: validated.title,
+        description: validated.description,
+        link: validated.link || null,
+        startTime: validated.startTime,
+        endTime: validated.endTime,
+        type: validated.type,
+        stage: validated.stage,
     });
 
     // Default Offsets: 1d (1440), 1h (60), 30m, 10m, 5m, 2m

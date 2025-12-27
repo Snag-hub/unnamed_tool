@@ -6,6 +6,7 @@ import { MobileNav } from '@/components/mobile-nav';
 import { Menu } from 'lucide-react';
 import Image from 'next/image';
 import { UserButton } from '@clerk/nextjs';
+import { SearchTrigger } from '@/components/search-trigger';
 
 export default function DashboardLayout({
     children,
@@ -34,7 +35,10 @@ export default function DashboardLayout({
                         />
                         <span className="font-bold text-lg text-zinc-900 dark:text-white">DayOS</span>
                     </div>
-                    <UserButton />
+                    <div className="flex items-center gap-2">
+                        <SearchTrigger className="w-40 sm:w-64" />
+                        <UserButton />
+                    </div>
                 </header>
 
                 {/* Scrollable Content Area */}

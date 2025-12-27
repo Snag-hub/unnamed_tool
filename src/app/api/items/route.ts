@@ -3,8 +3,10 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { users, items } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { createItemSchema } from '@/lib/validations';
+import { extractContent } from '@/lib/reader';
 
 // CORS headers for browser extension
 const corsHeaders = {
@@ -40,30 +42,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
   }
 
-  const { url } = await req.json();
+  const body = await req.json();
+  const result = createItemSchema.safeParse(body);
 
-  if (!url) {
-    return NextResponse.json({ error: 'URL is required' }, { status: 400, headers: corsHeaders });
+  if (!result.success) {
+    return NextResponse.json({ error: result.error.issues }, { status: 400, headers: corsHeaders });
   }
+
+  const validated = result.data;
 
   try {
     // Check if the item already exists for the user
     const existingItem = await db
       .select()
       .from(items)
-      .where(eq(items.url, url))
+      .where(and(eq(items.url, validated.url), eq(items.userId, userId)))
       .limit(1);
 
     if (existingItem.length > 0) {
       return NextResponse.json({ message: 'Item already exists' }, { status: 200, headers: corsHeaders });
     }
 
-    const metadata = await getMetadata(url);
+    const metadata = await getMetadata(validated.url);
+
+    // Extract content if it's an article
+    let extracted = null;
+    if (metadata.type === 'article') {
+      extracted = await extractContent(validated.url);
+    }
 
     const newItem = await db.insert(items).values({
       id: uuidv4(),
       userId: userId,
-      url,
+      url: validated.url,
       title: metadata.title,
       description: metadata.description,
       image: metadata.image,
@@ -73,6 +84,8 @@ export async function POST(req: Request) {
       type: metadata.type || 'other',
       author: metadata.author,
       status: 'inbox',
+      content: extracted?.content,
+      textContent: extracted?.textContent,
     }).returning();
 
     return NextResponse.json(newItem[0], { status: 201, headers: corsHeaders });

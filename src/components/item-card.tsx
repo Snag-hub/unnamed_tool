@@ -4,7 +4,7 @@ import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
 import { toggleFavorite, updateStatus, deleteItem, trackItemView } from '@/app/actions';
 import { useState } from 'react';
-import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide, FileText } from 'lucide-react';
+import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide, FileText, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 // Actually the existing code uses custom SVG components (PencilIcon, etc) at bottom. 
 // I will import deleteItem and use existing pattern or imported icons. 
@@ -12,12 +12,22 @@ import Link from 'next/link';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ReminderScheduler } from '@/components/reminder-scheduler';
 import { EditItemDialog } from '@/components/edit-item-dialog';
+import { TagBadge } from '@/components/tag-badge';
 
 type Item = InferSelectModel<typeof items> & {
     notes?: any[];
+    tags?: any[];
 };
 
-export function ItemCard({ item }: { item: Item }) {
+export function ItemCard({
+    item,
+    isSelected,
+    onToggleSelection
+}: {
+    item: Item;
+    isSelected?: boolean;
+    onToggleSelection?: () => void;
+}) {
     const [isPending, setIsPending] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showReminderDialog, setShowReminderDialog] = useState(false);
@@ -67,7 +77,26 @@ export function ItemCard({ item }: { item: Item }) {
                             alt={item.title || 'Item image'}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        {/* Badges - visible on desktop, hidden/smaller on mobile if needed */}
+
+                        {/* Selection Overlay */}
+                        <div
+                            onClick={(e) => {
+                                e.preventDefault();
+                                onToggleSelection?.();
+                            }}
+                            className={`absolute top-2 left-2 z-10 h-5 w-5 rounded border transition-all cursor-pointer flex items-center justify-center ${isSelected
+                                    ? 'bg-blue-600 border-blue-600'
+                                    : 'bg-white/50 border-zinc-300 opacity-0 group-hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-700'
+                                }`}
+                        >
+                            {isSelected && (
+                                <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            )}
+                        </div>
+
+                        {/* Badges */}
                         <div className="absolute bottom-2 right-2 hidden sm:flex gap-1">
                             {item.type === 'video' && (
                                 <div className="rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
@@ -122,6 +151,15 @@ export function ItemCard({ item }: { item: Item }) {
                             <p className="mt-1 hidden sm:block line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
                                 {item.description}
                             </p>
+                        )}
+
+                        {/* Tags */}
+                        {item.tags && item.tags.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                                {item.tags.map(tag => (
+                                    <TagBadge key={tag.id} tag={tag} />
+                                ))}
+                            </div>
                         )}
 
                         {/* Notes Preview */}
@@ -180,13 +218,15 @@ export function ItemCard({ item }: { item: Item }) {
                             <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
 
-                        <Link
-                            href={`/notes/new?itemId=${item.id}`}
-                            className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-                            title="Add Note"
-                        >
-                            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </Link>
+                        {item.content && (
+                            <Link
+                                href={`/reader/${item.id}`}
+                                className="rounded-full p-1.5 sm:p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors"
+                                title="Read Article"
+                            >
+                                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </Link>
+                        )}
 
                         <div className="flex-1 sm:hidden"></div>
 

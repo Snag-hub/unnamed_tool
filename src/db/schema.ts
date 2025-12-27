@@ -107,7 +107,11 @@ export const items = pgTable('items', {
   viewCount: integer('viewCount').default(0).notNull(),
   lastViewedAt: timestamp('lastViewedAt'),
 
-  read: boolean('read') // Keeping for backward compatibility, but 'status' replaces this logic
+  // Reader Mode
+  content: text('content'), // Extracted HTML
+  textContent: text('textContent'), // Plain text for search
+
+  read: boolean('read')
     .notNull()
     .default(false),
   createdAt: timestamp('createdAt')
@@ -157,6 +161,35 @@ export const tasks = pgTable('tasks', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 });
+
+export const tags = pgTable('tags', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  color: text('color').default('#3B82F6'), // Default blue
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+});
+
+export const itemsToTags = pgTable('items_to_tags', {
+  itemId: text('itemId').notNull().references(() => items.id, { onDelete: 'cascade' }),
+  tagId: text('tagId').notNull().references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.itemId, t.tagId] }),
+}));
+
+export const tasksToTags = pgTable('tasks_to_tags', {
+  taskId: text('taskId').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  tagId: text('tagId').notNull().references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.taskId, t.tagId] }),
+}));
+
+export const notesToTags = pgTable('notes_to_tags', {
+  noteId: text('noteId').notNull().references(() => notes.id, { onDelete: 'cascade' }),
+  tagId: text('tagId').notNull().references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.noteId, t.tagId] }),
+}));
 
 export const meetings = pgTable('meetings', {
   id: text('id').notNull().primaryKey(),

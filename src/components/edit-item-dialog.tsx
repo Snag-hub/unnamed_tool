@@ -1,19 +1,25 @@
 'use client';
 
 import { updateItem } from '@/app/actions';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { TagManager } from '@/components/tag-manager';
+import { attachTagToItem, detachTagFromItem } from '@/app/tag-actions';
 
 interface EditItemDialogProps {
     item: {
         id: string;
         title: string | null;
         reminderAt: Date | null;
+        tags?: any[];
     };
     onClose: () => void;
 }
 
 export function EditItemDialog({ item, onClose }: EditItemDialogProps) {
     const [title, setTitle] = useState(item.title || '');
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+        item.tags?.map(t => t.id) || []
+    );
 
     // Format Date for datetime-local input (YYYY-MM-DDTHH:mm)
     const formatDateForInput = (date: Date | null) => {
@@ -25,6 +31,16 @@ export function EditItemDialog({ item, onClose }: EditItemDialogProps) {
 
     const [reminderAt, setReminderAt] = useState(formatDateForInput(item.reminderAt));
     const [isPending, setIsPending] = useState(false);
+
+    const handleToggleTag = async (tagId: string) => {
+        if (selectedTagIds.includes(tagId)) {
+            setSelectedTagIds(prev => prev.filter(id => id !== tagId));
+            await detachTagFromItem(item.id, tagId);
+        } else {
+            setSelectedTagIds(prev => [...prev, tagId]);
+            await attachTagToItem(item.id, tagId);
+        }
+    };
 
     const handleSave = async () => {
         setIsPending(true);
@@ -59,7 +75,7 @@ export function EditItemDialog({ item, onClose }: EditItemDialogProps) {
                 </div>
 
                 {/* Form */}
-                <div className="p-6 space-y-4">
+                <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     <div>
                         <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Title</label>
                         <input
@@ -72,6 +88,11 @@ export function EditItemDialog({ item, onClose }: EditItemDialogProps) {
                     </div>
 
                     <div>
+                        <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Tags</label>
+                        <TagManager selectedTags={selectedTagIds} onToggleTag={handleToggleTag} />
+                    </div>
+
+                    <div>
                         <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Primary Reminder</label>
                         <input
                             type="datetime-local"
@@ -79,9 +100,6 @@ export function EditItemDialog({ item, onClose }: EditItemDialogProps) {
                             value={reminderAt}
                             onChange={(e) => setReminderAt(e.target.value)}
                         />
-                        <p className="mt-1 text-[10px] text-zinc-400">
-                            Setting this will overwrite the main reminder.
-                        </p>
                     </div>
 
                     <button

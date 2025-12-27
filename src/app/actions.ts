@@ -9,6 +9,8 @@ import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 import { getMetadata } from '@/lib/metadata';
 import webpush from 'web-push';
+import { createItemSchema, updateItemSchema, addReminderSchema } from '@/lib/validations';
+import { extractContent } from '@/lib/reader';
 
 // Configure Web Push (Global scope for actions)
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -76,9 +78,21 @@ export async function fetchItems({
         ? await db.select().from(notes).where(inArray(notes.itemId, itemIds))
         : [];
 
+    const { itemsToTags, tags: tagsTable } = await import('@/db/schema');
+    const itemTagsFlat = itemIds.length > 0
+        ? await db.select({
+            itemId: itemsToTags.itemId,
+            tag: tagsTable
+        })
+            .from(itemsToTags)
+            .innerJoin(tagsTable, eq(itemsToTags.tagId, tagsTable.id))
+            .where(inArray(itemsToTags.itemId, itemIds))
+        : [];
+
     const itemsWithNotes = slicedItems.map(item => ({
         ...item,
-        notes: itemNotes.filter(n => n.itemId === item.id)
+        notes: itemNotes.filter(n => n.itemId === item.id),
+        tags: itemTagsFlat.filter(it => it.itemId === item.id).map(it => it.tag)
     }));
 
     return {
@@ -97,18 +111,22 @@ export async function addReminder(
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
-    if (!itemId && !title && !taskId) {
-        throw new Error('Must provide either an Item ID, Task ID, or a Title for the reminder.');
-    }
+    const validated = addReminderSchema.parse({
+        date,
+        recurrence,
+        itemId,
+        title,
+        taskId
+    });
 
     await db.insert(reminders).values({
         id: uuidv4(),
         userId,
-        itemId: itemId || null, // Ensure null if undefined/empty
-        taskId: taskId || null,
-        title: title || null,
-        scheduledAt: date,
-        recurrence,
+        itemId: validated.itemId || null,
+        taskId: validated.taskId || null,
+        title: validated.title || null,
+        scheduledAt: validated.date,
+        recurrence: validated.recurrence,
     });
 
     // If it's an item reminder, update the legacy column
@@ -240,11 +258,15 @@ export async function updateItem(
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
+    const validated = updateItemSchema.parse(data);
+
     await db
         .update(items)
         .set({
-            title: data.title,
-            reminderAt: data.reminderAt,
+            title: validated.title,
+            reminderAt: validated.reminderAt,
+            status: validated.status,
+            isFavorite: validated.isFavorite,
         })
         .where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
@@ -286,22 +308,22 @@ export async function emptyTrash() {
 
 export async function createItem(url: string, title?: string, description?: string) {
     const { userId } = await auth();
-    if (!userId) {
-        throw new Error('Unauthorized');
-    }
+    if (!userId) throw new Error('Unauthorized');
+
+    const validated = createItemSchema.parse({ url, title, description });
 
     try {
         const existingItem = await db
             .select()
             .from(items)
-            .where(and(eq(items.url, url), eq(items.userId, userId)))
+            .where(and(eq(items.url, validated.url), eq(items.userId, userId)))
             .limit(1);
 
         if (existingItem.length > 0) {
             // Idempotency: Move to top (Bump) instead of duplicating
             const updatedItem = await db
                 .update(items)
-                .set({ createdAt: new Date(), status: 'inbox' }) // Reset to inbox if archived? Optional, but safer to just bump.
+                .set({ createdAt: new Date(), status: 'inbox' })
                 .where(eq(items.id, existingItem[0].id))
                 .returning();
 
@@ -309,20 +331,28 @@ export async function createItem(url: string, title?: string, description?: stri
             return { success: true, message: 'Item already exists. Moved to top.', item: updatedItem[0] };
         }
 
-        const metadata = await getMetadata(url);
+        const metadata = await getMetadata(validated.url);
+
+        // Extract content if it's an article
+        let extracted = null;
+        if (metadata.type === 'article') {
+            extracted = await extractContent(validated.url);
+        }
 
         const newItem = await db.insert(items).values({
             id: uuidv4(),
             userId,
-            url,
-            title: title || metadata.title,
-            description: description || metadata.description,
+            url: validated.url,
+            title: validated.title || metadata.title,
+            description: validated.description || metadata.description,
             image: metadata.image,
             siteName: metadata.siteName,
             favicon: metadata.favicon,
             type: metadata.type || 'other',
             author: metadata.author,
             status: 'inbox',
+            content: extracted?.content,
+            textContent: extracted?.textContent,
         }).returning();
 
         revalidatePath('/inbox');
@@ -610,4 +640,100 @@ export async function getItem(itemId: string) {
         .limit(1);
 
     return result[0] || null;
+}
+
+export async function globalSearch(query: string) {
+    const { userId } = await auth();
+    if (!userId || !query) return { items: [], tasks: [], meetings: [], notes: [] };
+
+    const searchPattern = `%${query}%`;
+
+    const searchedItems = await db
+        .select()
+        .from(items)
+        .where(
+            and(
+                eq(items.userId, userId),
+                or(
+                    ilike(items.title, searchPattern),
+                    ilike(items.url, searchPattern),
+                    ilike(items.description, searchPattern),
+                    ilike(items.textContent, searchPattern)
+                )
+            )
+        )
+        .limit(5);
+
+    const { tasks, meetings } = await import('@/db/schema');
+    const searchedTasks = await db
+        .select()
+        .from(tasks)
+        .where(
+            and(
+                eq(tasks.userId, userId),
+                or(
+                    ilike(tasks.title, searchPattern),
+                    ilike(tasks.description, searchPattern)
+                )
+            )
+        )
+        .limit(5);
+
+    const searchedMeetings = await db
+        .select()
+        .from(meetings)
+        .where(
+            and(
+                eq(meetings.userId, userId),
+                or(
+                    ilike(meetings.title, searchPattern),
+                    ilike(meetings.description, searchPattern)
+                )
+            )
+        )
+        .limit(5);
+
+    const searchedNotes = await db
+        .select()
+        .from(notes)
+        .where(
+            and(
+                eq(notes.userId, userId),
+                or(
+                    ilike(notes.title, searchPattern),
+                    ilike(notes.content, searchPattern)
+                )
+            )
+        )
+        .limit(5);
+
+    return {
+        items: searchedItems,
+        tasks: searchedTasks,
+        meetings: searchedMeetings,
+        notes: searchedNotes,
+    };
+}
+
+export async function batchUpdateStatus(itemIds: string[], status: 'inbox' | 'reading' | 'archived' | 'trash') {
+    const { userId } = await auth();
+    if (!userId) throw new Error('Unauthorized');
+
+    await db.update(items)
+        .set({ status })
+        .where(and(inArray(items.id, itemIds), eq(items.userId, userId)));
+
+    revalidatePath('/inbox');
+    revalidatePath('/archive');
+    revalidatePath('/trash');
+}
+
+export async function batchDeleteItems(itemIds: string[]) {
+    const { userId } = await auth();
+    if (!userId) throw new Error('Unauthorized');
+
+    await db.delete(items)
+        .where(and(inArray(items.id, itemIds), eq(items.userId, userId)));
+
+    revalidatePath('/trash');
 }

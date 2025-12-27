@@ -39,19 +39,19 @@
 - [x] **Quick Actions**: Mark tasks done, archive items from timeline.
 - [x] **Mobile Optimized**: Responsive design with no overflow.
 
+### � Phase 5: Robustness & Hardening (In Progress)
+**Goal:** Industrial-grade stability.
+- [ ] **Automated Testing**: Unit (Vitest) + E2E (Playwright).
+- [ ] **Type-Safe API**: Zod validation for all inputs.
+- [ ] **Rate Limiting**: Protection for extension endpoints.
+
+### 🚀 Phase 6: Power User Features (Backlog)
+**Goal:** Superior experience.
+- [ ] **Reader Mode**: Distraction-free content reading.
+- [ ] **Omnisearch**: Search everything via Cmd+K.
+- [ ] **Tagging**: Global organization system.
+- [ ] **Batch Actions**: Multi-select and bulk archive.
+
 ---
 
-## 📝 Status: ALL PHASES COMPLETE! 🎉
-
-DayOS is production-ready with all core features implemented:
-- ✅ Stabilization & Hardening
-- ✅ Task Management
-- ✅ Meeting Scheduling
-- ✅ Note Taking
-- ✅ Unified Timeline
-
-### Polish
-- [x] **Empty States**: "All caught up" screens for empty Inbox/Archives.
-- [x] **Settings**: Add toggle for "Email vs Push" preference (Granular control).
-- [x] **Timeline**: Unified daily view with time blocking.
-- [x] **Notes**: Markdown editor with search.
+## 📝 Status: EXPANDING Roadmap 🏗️

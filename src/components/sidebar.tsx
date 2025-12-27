@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/clerk-buttons';
 import { Inbox, Star, Archive, Trash2, Settings, X, CheckSquare, Calendar, Clock, FileText } from 'lucide-react';
+import { SearchTrigger } from '@/components/search-trigger';
 
 const navigation = [
     { name: 'Timeline', href: '/timeline', icon: Clock },
@@ -53,6 +54,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <span className="sr-only">Close sidebar</span>
                     <X className="h-6 w-6" />
                 </button>
+            </div>
+
+            {/* Global Search Trigger */}
+            <div className="px-3 py-2">
+                <SearchTrigger className="w-full" />
             </div>
 
             {/* Navigation */}

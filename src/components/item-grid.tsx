@@ -21,6 +21,8 @@ interface ItemGridProps {
     type?: 'all' | 'article' | 'video';
 }
 
+import { SelectionBar } from '@/components/selection-bar';
+
 export function ItemGrid({
     initialItems,
     initialHasMore = false,
@@ -34,22 +36,31 @@ export function ItemGrid({
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(initialHasMore);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     const { ref, inView } = useInView({
         threshold: 0,
         rootMargin: '100px',
     });
 
-    // Reset state when initialItems change (e.g. filter/search update from parent)
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const clearSelection = () => setSelectedIds([]);
+
+    // Reset state when initialItems change
     useEffect(() => {
         setItems(initialItems);
         setPage(1);
         setHasMore(initialHasMore);
         setIsLoading(false);
+        setSelectedIds([]);
     }, [initialItems, initialHasMore]);
 
     useEffect(() => {
-        // If we are in view, have more items, and aren't currently loading
         if (inView && hasMore && !isLoading) {
             loadMore();
         }
@@ -82,15 +93,16 @@ export function ItemGrid({
         }
     };
 
-    if (items.length === 0) {
-        return <>{emptyState}</>;
-    }
-
     return (
         <>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {items.map((item) => (
-                    <ItemCard key={item.id} item={item} />
+                    <ItemCard
+                        key={item.id}
+                        item={item}
+                        isSelected={selectedIds.includes(item.id)}
+                        onToggleSelection={() => toggleSelection(item.id)}
+                    />
                 ))}
             </div>
 
@@ -101,6 +113,14 @@ export function ItemGrid({
                 >
                     {isLoading && <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />}
                 </div>
+            )}
+
+            {selectedIds.length > 0 && (
+                <SelectionBar
+                    selectedIds={selectedIds}
+                    onClear={clearSelection}
+                    currentStatus={status}
+                />
             )}
         </>
     );

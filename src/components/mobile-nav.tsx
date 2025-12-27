@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Inbox, Star, Archive, Settings, CheckSquare, Calendar, MoreHorizontal, X, Trash2, Clock, FileText } from 'lucide-react';
 import { useState } from 'react';
+import { SearchTrigger } from '@/components/search-trigger';
 
 const navItems = [
     { href: '/timeline', label: 'Timeline', icon: Clock },
@@ -47,6 +48,10 @@ export function MobileNav() {
                             >
                                 <X className="w-5 h-5" />
                             </button>
+                        </div>
+
+                        <div className="mb-6">
+                            <SearchTrigger className="w-full" />
                         </div>
 
                         <div className="space-y-2">
