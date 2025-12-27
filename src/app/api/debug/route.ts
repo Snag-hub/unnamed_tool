@@ -19,8 +19,14 @@ export async function GET() {
 
         try {
             // Try a simple query
-            const result = await db.select().from(items).limit(1);
-            debugInfo.dbCheck = 'Success';
+            const itemCheck = await db.select().from(items).limit(1);
+
+            // Check new tables
+            const { tags, itemsToTags } = await import('@/db/schema');
+            const tagCheck = await db.select().from(tags).limit(1);
+            const joinCheck = await db.select().from(itemsToTags).limit(1);
+
+            debugInfo.dbCheck = 'Success (Items, Tags, and Joins validated)';
         } catch (dbError: any) {
             debugInfo.dbCheck = `Error: ${dbError.message || 'Unknown DB error'}`;
         }
