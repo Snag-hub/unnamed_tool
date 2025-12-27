@@ -64,6 +64,13 @@
       "when": 1766687188275,
       "tag": "0008_old_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766818865716,
+      "tag": "0009_add_tags_and_reader_content",
+      "breakpoints": true
     }
   ]
 }
