@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "build:ci": "npm run db:push && npm test -- --run && next build --webpack",
+    "build:ci": "npm test -- --run && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
