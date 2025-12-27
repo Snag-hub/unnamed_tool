@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "build:ci": "npm test -- --run && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
     "test:ui": "vitest --ui"
   },
   "dependencies": {
@@ -24,6 +27,7 @@
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.0",
+    "jsdom": "^27.4.0",
     "lucide-react": "^0.561.0",
     "next": "16.0.8",
     "next-auth": "^4.24.13",
@@ -54,7 +58,6 @@
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",
-    "jsdom": "^27.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.16"
