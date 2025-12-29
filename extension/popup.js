@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // --- Helpers ---
 
   // Browser agnostic APIs
-  const api = window.browser || window.chrome;
+  const api = typeof browser !== 'undefined' ? browser : chrome;
 
   async function getStorage(key) {
     if (window.browser && browser.storage) return browser.storage.local.get(key);
