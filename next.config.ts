@@ -19,6 +19,7 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['linkedom', '@mozilla/readability', 'html-encoding-sniffer', '@exodus/bytes'],
   images: {
     remotePatterns: [
       {
