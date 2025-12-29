@@ -1,6 +1,6 @@
 import { Readability } from '@mozilla/readability';
-import { JSDOM } from 'jsdom';
-import DOMPurify from 'isomorphic-dompurify';
+import { Window } from 'happy-dom';
+import createDOMPurify from 'dompurify';
 
 export interface ExtractedContent {
     content: string;
@@ -21,8 +21,14 @@ export async function extractContent(url: string): Promise<ExtractedContent | nu
         }
 
         const html = await response.text();
-        const dom = new JSDOM(html, { url });
-        const reader = new Readability(dom.window.document);
+        const window = new Window({ url });
+        const document = window.document;
+        document.write(html);
+
+        // Initialize DOMPurify with the happy-dom window
+        const DOMPurify = createDOMPurify(window as unknown as Window);
+
+        const reader = new Readability(document as unknown as Document);
         const article = reader.parse();
 
         if (!article) {

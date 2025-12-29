@@ -19,7 +19,6 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['jsdom', '@mozilla/readability'],
   images: {
     remotePatterns: [
       {
