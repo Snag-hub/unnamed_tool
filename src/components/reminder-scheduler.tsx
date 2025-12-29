@@ -126,6 +126,25 @@ export function ReminderScheduler({ itemId, onClose }: ReminderSchedulerProps) {
         }
     };
 
+    const handleDeleteReminder = async (id: string) => {
+        try {
+            await deleteReminder(id);
+            await fetchReminders();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleSnooze = async (id: string, mins: number) => {
+        try {
+            await snoozeReminder(id, mins);
+            await fetchReminders();
+            setSnoozeExpandedId(null);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}>
             <div className="w-full max-w-md bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl rounded-[32px] shadow-2xl border border-white/20 dark:border-zinc-800/50 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
@@ -229,15 +248,36 @@ export function ReminderScheduler({ itemId, onClose }: ReminderSchedulerProps) {
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">Pending Reminders</h4>
                             <div className="space-y-3">
                                 {existingReminders.map(r => (
-                                    <div key={r.id} className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between group">
-                                        <div>
-                                            <p className="text-sm font-bold">{r.title || new Date(r.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                            <p className="text-[10px] text-zinc-400 font-medium">{new Date(r.scheduledAt).toLocaleDateString()}</p>
+                                    <div key={r.id} className="relative">
+                                        <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between group">
+                                            <div>
+                                                <p className="text-sm font-bold">{r.title || new Date(r.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                <p className="text-[10px] text-zinc-400 font-medium">{new Date(r.scheduledAt).toLocaleDateString()}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => setSnoozeExpandedId(snoozeExpandedId === r.id ? null : r.id)} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:scale-110 transition-transform"><Clock className="w-4 h-4" /></button>
+                                                <button onClick={() => handleDeleteReminder(r.id)} className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 hover:scale-110 transition-transform"><Trash2 className="w-4 h-4" /></button>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => setSnoozeExpandedId(snoozeExpandedId === r.id ? null : r.id)} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600"><Clock className="w-4 h-4" /></button>
-                                            <button onClick={() => handleDeleteReminder(r.id)} className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600"><Trash2 className="w-4 h-4" /></button>
-                                        </div>
+
+                                        {snoozeExpandedId === r.id && (
+                                            <div className="absolute top-full right-0 mt-2 z-10 w-48 p-2 rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-100 dark:border-zinc-800 animate-in slide-in-from-top-2">
+                                                <div className="grid grid-cols-1 gap-1">
+                                                    <button onClick={() => handleSnooze(r.id, 10)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold transition-colors flex items-center justify-between">
+                                                        +10 Minutes
+                                                        <ChevronRight className="w-3 h-3 text-zinc-400" />
+                                                    </button>
+                                                    <button onClick={() => handleSnooze(r.id, 60)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold transition-colors flex items-center justify-between">
+                                                        +1 Hour
+                                                        <ChevronRight className="w-3 h-3 text-zinc-400" />
+                                                    </button>
+                                                    <button onClick={() => handleSnooze(r.id, 1440)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold transition-colors flex items-center justify-between">
+                                                        +1 Day
+                                                        <ChevronRight className="w-3 h-3 text-zinc-400" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
