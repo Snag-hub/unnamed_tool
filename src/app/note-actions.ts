@@ -77,7 +77,7 @@ export async function createNote(data: {
         updatedAt: new Date(),
     });
 
-    revalidateTag('notes');
+    revalidateTag('notes', 'default' as any);
     revalidatePath('/notes');
     revalidatePath('/tasks');
     revalidatePath('/meetings');
@@ -109,7 +109,7 @@ export async function updateNote(
         })
         .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
 
-    revalidateTag('notes');
+    revalidateTag('notes', 'default' as any);
     revalidatePath('/notes');
     revalidatePath(`/notes/${noteId}`);
     revalidatePath('/tasks');
@@ -125,7 +125,7 @@ export async function deleteNote(noteId: string) {
         .delete(notes)
         .where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
 
-    revalidateTag('notes');
+    revalidateTag('notes', 'default' as any);
     revalidatePath('/notes');
     revalidatePath('/tasks');
     revalidatePath('/meetings');

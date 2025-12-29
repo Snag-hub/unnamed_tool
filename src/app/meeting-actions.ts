@@ -105,8 +105,8 @@ export async function createMeeting(data: {
         }
     }
 
-    revalidateTag('meetings');
-    revalidateTag('timeline');
+    revalidateTag('meetings', 'default' as any);
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/meetings');
 }
 
@@ -116,8 +116,8 @@ export async function deleteMeeting(meetingId: string) {
 
     await db.delete(meetings).where(and(eq(meetings.id, meetingId), eq(meetings.userId, userId)));
 
-    revalidateTag('meetings');
-    revalidateTag('timeline');
+    revalidateTag('meetings', 'default' as any);
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/meetings');
 }
 

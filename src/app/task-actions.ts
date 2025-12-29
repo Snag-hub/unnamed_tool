@@ -97,8 +97,8 @@ export async function createTask(data: {
         priority: validated.priority,
     }).returning();
 
-    revalidateTag('tasks');
-    revalidateTag('timeline');
+    revalidateTag('tasks', 'default' as any);
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/tasks');
 
     return { success: true, task: newTask[0] };
@@ -110,8 +110,8 @@ export async function updateTaskStatus(taskId: string, status: 'pending' | 'in_p
 
     await db.update(tasks).set({ status }).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
 
-    revalidateTag('tasks');
-    revalidateTag('timeline');
+    revalidateTag('tasks', 'default' as any);
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/tasks');
 }
 
@@ -121,8 +121,8 @@ export async function deleteTask(taskId: string) {
 
     await db.delete(tasks).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
 
-    revalidateTag('tasks');
-    revalidateTag('timeline');
+    revalidateTag('tasks', 'default' as any);
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/tasks');
 }
 
@@ -137,8 +137,8 @@ export async function updateTask(taskId: string, data: any) {
         updatedAt: new Date()
     }).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
 
-    revalidateTag('tasks');
-    revalidateTag('timeline');
+    revalidateTag('tasks', 'default' as any);
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/tasks');
 }
 

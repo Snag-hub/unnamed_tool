@@ -191,10 +191,10 @@ export async function addReminder(
 
     if (itemId) {
         await db.update(items).set({ reminderAt: date }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
-        revalidateTag('items');
+        revalidateTag('items', 'default' as any);
         revalidatePath('/inbox');
     }
-    revalidateTag('timeline');
+    revalidateTag('timeline', 'default' as any);
     revalidatePath('/settings');
 }
 
@@ -204,8 +204,8 @@ export async function deleteReminder(reminderId: string) {
 
     await db.delete(reminders).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 
-    revalidateTag('timeline');
-    revalidateTag('items');
+    revalidateTag('timeline', 'default' as any);
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/settings');
 }
@@ -218,8 +218,8 @@ export async function snoozeReminder(reminderId: string, minutes: number) {
 
     await db.update(reminders).set({ scheduledAt: newTime }).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 
-    revalidateTag('timeline');
-    revalidateTag('items');
+    revalidateTag('timeline', 'default' as any);
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/settings');
 }
@@ -230,8 +230,8 @@ export async function updateReminder(reminderId: string, date: Date, recurrence:
 
     await db.update(reminders).set({ scheduledAt: date, recurrence, title: title || null }).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 
-    revalidateTag('timeline');
-    revalidateTag('items');
+    revalidateTag('timeline', 'default' as any);
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/settings');
 }
@@ -254,7 +254,7 @@ export async function toggleFavorite(itemId: string, isFavorite: boolean) {
 
     await db.update(items).set({ isFavorite }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items');
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/favorites');
 }
@@ -265,7 +265,7 @@ export async function updateStatus(itemId: string, status: 'inbox' | 'reading' |
 
     await db.update(items).set({ status }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items');
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/archive');
     revalidatePath('/favorites');
@@ -279,7 +279,7 @@ export async function updateItem(itemId: string, data: any) {
 
     await db.update(items).set({ ...validated }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items');
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
 }
 
@@ -289,8 +289,8 @@ export async function deleteItem(itemId: string) {
 
     await db.delete(items).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items');
-    revalidateTag('stats');
+    revalidateTag('items', 'default' as any);
+    revalidateTag('stats', 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/trash');
 }
@@ -301,8 +301,8 @@ export async function emptyTrash() {
 
     await db.delete(items).where(and(eq(items.userId, userId), eq(items.status, 'trash')));
 
-    revalidateTag('items');
-    revalidateTag('stats');
+    revalidateTag('items', 'default' as any);
+    revalidateTag('stats', 'default' as any);
     revalidatePath('/trash');
 }
 
@@ -320,7 +320,7 @@ export async function createItem(url: string, title?: string, description?: stri
 
         if (existingItem.length > 0) {
             const updatedItem = await db.update(items).set({ createdAt: new Date(), status: 'inbox' }).where(eq(items.id, existingItem[0].id)).returning();
-            revalidateTag('items');
+            revalidateTag('items', 'default' as any);
             revalidatePath('/inbox');
             return { success: true, message: 'Item already exists. Moved to top.', item: updatedItem[0] };
         }
@@ -345,8 +345,8 @@ export async function createItem(url: string, title?: string, description?: stri
             textContent: extracted?.textContent,
         }).returning();
 
-        revalidateTag('items');
-        revalidateTag('stats');
+        revalidateTag('items', 'default' as any);
+        revalidateTag('stats', 'default' as any);
         revalidatePath('/inbox');
         return { success: true, item: newItem[0] };
     } catch (error) {
@@ -395,7 +395,7 @@ export async function trackItemView(itemId: string) {
     if (!userId) return;
     try {
         await db.update(items).set({ viewCount: sql`${items.viewCount} + 1`, lastViewedAt: new Date() }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
-        revalidateTag('stats');
+        revalidateTag('stats', 'default' as any);
     } catch (error) {
         console.error('Failed to track item view:', error);
     }
@@ -444,7 +444,7 @@ export async function batchUpdateStatus(itemIds: string[], status: 'inbox' | 're
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
     await db.update(items).set({ status }).where(and(inArray(items.id, itemIds), eq(items.userId, userId)));
-    revalidateTag('items');
+    revalidateTag('items', 'default' as any);
     revalidatePath('/inbox');
 }
 
@@ -452,7 +452,7 @@ export async function batchDeleteItems(itemIds: string[]) {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
     await db.delete(items).where(and(inArray(items.id, itemIds), eq(items.userId, userId)));
-    revalidateTag('items');
-    revalidateTag('stats');
+    revalidateTag('items', 'default' as any);
+    revalidateTag('stats', 'default' as any);
     revalidatePath('/trash');
 }
