@@ -7,6 +7,8 @@ import {
   integer,
   primaryKey,
   index,
+  jsonb,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccount } from 'next-auth/adapters';
 
@@ -256,4 +258,14 @@ export const rateLimits = pgTable('rate_limits', {
   key: text('key').notNull().primaryKey(),
   count: integer('count').notNull().default(0),
   reset: timestamp('reset').notNull(),
+});
+
+// System Logs for internal error tracking
+export const systemLogs = pgTable('system_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  level: text('level').notNull(), // 'error', 'warn', 'info'
+  message: text('message').notNull(),
+  stack: text('stack'),
+  context: jsonb('context'), // Stores metadata like userId, path, etc.
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
 });

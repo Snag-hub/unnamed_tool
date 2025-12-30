@@ -39,6 +39,7 @@ export const viewport = {
 import dynamic from "next/dynamic";
 
 const Omnisearch = dynamic(() => import("@/components/omnisearch").then(mod => mod.Omnisearch));
+import { Toaster } from 'sonner';
 
 export default function RootLayout({
   children,
@@ -54,6 +55,7 @@ export default function RootLayout({
         >
           <Omnisearch />
           {children}
+          <Toaster position="bottom-right" theme="system" />
         </body>
       </html>
     </ClerkProvider>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, FileText, CheckCircle, Calendar, Globe, BookOpen, X } from 'lucide-react';
 import { globalSearch } from '@/app/actions';
 import { useTransition } from 'react';
+import { useHotkeys } from '@/hooks/use-hotkeys';
 
 export function Omnisearch() {
     const [isOpen, setIsOpen] = useState(false);
@@ -30,23 +31,17 @@ export function Omnisearch() {
 
     const [filter, setFilter] = useState<'all' | 'items' | 'tasks' | 'notes'>('all');
 
-    useEffect(() => {
-        const down = (e: KeyboardEvent) => {
-            if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                setIsOpen((open) => !open);
-            }
-        };
-
-        const toggle = () => setIsOpen(true);
-        window.addEventListener('open-omnisearch', toggle);
-        document.addEventListener('keydown', down);
-
-        return () => {
-            document.removeEventListener('keydown', down);
-            window.removeEventListener('open-omnisearch', toggle);
-        };
-    }, []);
+    // Shortcuts
+    useHotkeys('k', () => setIsOpen((open) => !open), { metaKey: true, preventDefault: true });
+    useHotkeys('k', () => setIsOpen((open) => !open), { ctrlKey: true, preventDefault: true });
+    useHotkeys('/', () => {
+        setIsOpen(true);
+        // Small timeout to ensure input focus works if it was hidden
+        setTimeout(() => {
+            const input = document.querySelector('input[placeholder="Search for anything..."]') as HTMLInputElement;
+            if (input) input.focus();
+        }, 0);
+    }, { preventDefault: true });
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {

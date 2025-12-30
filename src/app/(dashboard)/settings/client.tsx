@@ -28,7 +28,7 @@ export default function SettingsClient({
     apiToken,
     userId,
     initialPreferences,
-    initialStats
+    initialStats,
 }: {
     apiToken?: string | null;
     userId: string;
@@ -38,7 +38,6 @@ export default function SettingsClient({
     // Token State
     const [token, setToken] = useState(apiToken);
     const [loadingToken, setLoadingToken] = useState(false);
-
     // Preferences State
     const [emailEnabled, setEmailEnabled] = useState(initialPreferences?.emailNotifications ?? true);
     const [pushEnabled, setPushEnabled] = useState(initialPreferences?.pushNotifications ?? true);
@@ -528,6 +527,33 @@ export default function SettingsClient({
                     </div>
                 </div>
             </section >
+
+            {/* Data & Privacy Section */}
+            <section className="relative overflow-hidden rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-black/20 backdrop-blur-xl shadow-sm">
+                <div className="p-6 sm:p-8">
+                    <h2 className="text-xl font-semibold text-zinc-900 dark:text-white flex items-center gap-2 mb-6">
+                        <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 p-1.5 rounded-lg">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+                        </span>
+                        Data & Privacy
+                    </h2>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                        <div>
+                            <p className="font-medium text-zinc-900 dark:text-white">Export Your Data</p>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400">Download a copy of all your tasks, notes, and items in JSON format.</p>
+                        </div>
+                        <a
+                            href="/api/user/export"
+                            className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            Download JSON
+                        </a>
+                    </div>
+                </div>
+            </section>
+
         </div >
     );
 }

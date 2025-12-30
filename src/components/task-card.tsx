@@ -14,6 +14,7 @@ const ConfirmDialog = dynamic(() => import('@/components/confirm-dialog').then(m
 import { useState } from 'react';
 import { FileText } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 type Task = InferSelectModel<typeof tasks> & {
     project?: {
@@ -27,20 +28,67 @@ export function TaskCard({ task }: { task: Task }) {
     const [isPending, setIsPending] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
+    const [isDeleted, setIsDeleted] = useState(false);
+
+    // Optimistic status management
+    const [optimisticStatus, setOptimisticStatus] = useState(task.status);
+
+    // Sync optimistic status when server prop updates
+    if (task.status !== optimisticStatus && !isPending) {
+        setOptimisticStatus(task.status);
+    }
 
     const handleStatusChange = async () => {
+        const newStatus = optimisticStatus === 'done' ? 'pending' : 'done';
+        setOptimisticStatus(newStatus); // Instant update
         setIsPending(true);
-        const newStatus = task.status === 'done' ? 'pending' : 'done';
-        await updateTaskStatus(task.id, newStatus);
-        setIsPending(false);
+
+        try {
+            await updateTaskStatus(task.id, newStatus);
+        } catch (error) {
+            setOptimisticStatus(task.status); // Revert on error
+            const message = error instanceof Error ? error.message : 'Failed to update task';
+            if (message.includes('Too many requests')) {
+                toast.error('Whoa, slow down!', { description: message });
+            } else {
+                toast.error(message);
+            }
+        } finally {
+            setIsPending(false);
+        }
     };
 
     const handleDelete = async () => {
-        setIsPending(true);
-        await deleteTask(task.id);
-        setIsPending(false);
         setShowDeleteConfirm(false);
+        setIsDeleted(true); // Hide immediately
+
+        const deleteTimeout = setTimeout(async () => {
+            try {
+                await deleteTask(task.id);
+            } catch (error) {
+                // If delete fails (e.g. rate limit), restore the UI
+                setIsDeleted(false);
+                const message = error instanceof Error ? error.message : 'Failed to delete task';
+                if (message.includes('Too many requests')) {
+                    toast.error('Whoa, slow down! Delete failed.', { description: message });
+                } else {
+                    toast.error(message);
+                }
+            }
+        }, 4000);
+
+        toast('Task deleted', {
+            action: {
+                label: 'Undo',
+                onClick: () => {
+                    clearTimeout(deleteTimeout);
+                    setIsDeleted(false);
+                },
+            },
+        });
     };
+
+    if (isDeleted) return null;
 
     return (
         <>
@@ -48,13 +96,13 @@ export function TaskCard({ task }: { task: Task }) {
                 <div className="flex items-start gap-3">
                     <button
                         onClick={handleStatusChange}
-                        className={`mt-1 flex-shrink-0 h-5 w-5 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center transition-colors ${task.status === 'done' ? 'bg-green-500 border-green-500 text-white' : 'hover:border-zinc-400'}`}
+                        className={`mt-1 flex-shrink-0 h-5 w-5 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center transition-colors ${optimisticStatus === 'done' ? 'bg-green-500 border-green-500 text-white' : 'hover:border-zinc-400'}`}
                     >
-                        {task.status === 'done' && <CheckIcon className="h-3.5 w-3.5" />}
+                        {optimisticStatus === 'done' && <CheckIcon className="h-3.5 w-3.5" />}
                     </button>
 
                     <div className="flex-1 min-w-0">
-                        <h3 className={`text-sm font-semibold text-zinc-900 dark:text-zinc-100 ${task.status === 'done' ? 'line-through text-zinc-500 dark:text-zinc-500' : ''}`}>
+                        <h3 className={`text-sm font-semibold text-zinc-900 dark:text-zinc-100 ${optimisticStatus === 'done' ? 'line-through text-zinc-500 dark:text-zinc-500' : ''}`}>
                             {task.title}
                         </h3>
                         {task.description && (
@@ -77,7 +125,7 @@ export function TaskCard({ task }: { task: Task }) {
                             </span>
 
                             {task.dueDate && (
-                                <span className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>
+                                <span className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() && optimisticStatus !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>
                                     <CalendarIcon className="h-3 w-3" />
                                     {new Date(task.dueDate).toLocaleDateString()}
                                 </span>

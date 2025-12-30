@@ -53,6 +53,8 @@ export default async function SettingsPage() {
 
         // Fetch analytics stats
         stats = await getUserStats();
+
+
     } catch (error) {
         console.error('Error fetching/creating user:', error);
     }
