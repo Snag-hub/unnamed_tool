@@ -17,21 +17,15 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  try {
-    const { userId } = await auth();
+  const { userId } = await auth();
 
-    // If user is logged in and trying to access landing page, redirect to inbox
-    if (userId && req.nextUrl.pathname === '/') {
-      return NextResponse.redirect(new URL('/inbox', req.url));
-    }
+  // If user is logged in and trying to access landing page, redirect to inbox
+  if (userId && req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/inbox', req.url));
+  }
 
-    if (isProtectedRoute(req)) {
-      await auth.protect();
-    }
-  } catch (error) {
-    console.error('Middleware internal error:', error);
-    // You might want to return a specific error response here or let Next.js handle it types
-    return NextResponse.next();
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
 });
 

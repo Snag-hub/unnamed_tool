@@ -23,141 +23,147 @@ if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 
 // --- Cached Functions ---
 
-const getCachedItems = unstable_cache(
-    async (userId: string, page: number, limit: number, status: string, isFavorite?: boolean, search?: string, type?: string) => {
-        const offset = (page - 1) * limit;
-        const conditions = [eq(items.userId, userId)];
-        if (status) conditions.push(eq(items.status, status as any));
-        if (isFavorite) conditions.push(eq(items.isFavorite, true));
+const getCachedItems = async (userId: string, page: number, limit: number, status: string, isFavorite?: boolean, search?: string, type?: string) => {
+    return unstable_cache(
+        async () => {
+            const offset = (page - 1) * limit;
+            const conditions = [eq(items.userId, userId)];
+            if (status) conditions.push(eq(items.status, status as any));
+            if (isFavorite) conditions.push(eq(items.isFavorite, true));
 
-        if (search) {
-            const searchPattern = `%${search}%`;
-            conditions.push(or(ilike(items.title, searchPattern), ilike(items.url, searchPattern), ilike(items.description, searchPattern))!);
-        }
+            if (search) {
+                const searchPattern = `%${search}%`;
+                conditions.push(or(ilike(items.title, searchPattern), ilike(items.url, searchPattern), ilike(items.description, searchPattern))!);
+            }
 
-        if (type && type !== 'all') {
-            conditions.push(eq(items.type, type as any));
-        }
+            if (type && type !== 'all') {
+                conditions.push(eq(items.type, type as any));
+            }
 
-        const userItems = await db
-            .select()
-            .from(items)
-            .where(and(...conditions))
-            .orderBy(desc(items.createdAt))
-            .limit(limit + 1)
-            .offset(offset);
+            const userItems = await db
+                .select()
+                .from(items)
+                .where(and(...conditions))
+                .orderBy(desc(items.createdAt))
+                .limit(limit + 1)
+                .offset(offset);
 
-        const hasMore = userItems.length > limit;
-        const slicedItems = hasMore ? userItems.slice(0, limit) : userItems;
-        const itemIds = slicedItems.map(i => i.id);
+            const hasMore = userItems.length > limit;
+            const slicedItems = hasMore ? userItems.slice(0, limit) : userItems;
+            const itemIds = slicedItems.map(i => i.id);
 
-        try {
-            const itemNotes = itemIds.length > 0
-                ? await db.select({
-                    id: notes.id,
-                    title: notes.title,
-                    content: notes.content,
-                    itemId: notes.itemId,
-                    createdAt: notes.createdAt
-                }).from(notes).where(inArray(notes.itemId, itemIds))
-                : [];
+            try {
+                const itemNotes = itemIds.length > 0
+                    ? await db.select({
+                        id: notes.id,
+                        title: notes.title,
+                        content: notes.content,
+                        itemId: notes.itemId,
+                        createdAt: notes.createdAt
+                    }).from(notes).where(inArray(notes.itemId, itemIds))
+                    : [];
 
-            const itemTagsFlat = itemIds.length > 0
-                ? await db.select({
-                    itemId: itemsToTags.itemId,
-                    tagId: tags.id,
-                    tagName: tags.name,
-                    tagColor: tags.color
+                const itemTagsFlat = itemIds.length > 0
+                    ? await db.select({
+                        itemId: itemsToTags.itemId,
+                        tagId: tags.id,
+                        tagName: tags.name,
+                        tagColor: tags.color
+                    })
+                        .from(itemsToTags)
+                        .innerJoin(tags, eq(itemsToTags.tagId, tags.id))
+                        .where(inArray(itemsToTags.itemId, itemIds))
+                    : [];
+
+                const itemsWithNotes = slicedItems.map(item => ({
+                    ...item,
+                    notes: itemNotes
+                        .filter(n => n.itemId === item.id)
+                        .map(n => ({ id: n.id, title: n.title, content: n.content, createdAt: n.createdAt })),
+                    tags: itemTagsFlat
+                        .filter(it => it.itemId === item.id)
+                        .map(it => ({ id: it.tagId, name: it.tagName, color: it.tagColor }))
+                }));
+
+                return { items: itemsWithNotes, hasMore };
+            } catch (error) {
+                console.error('Error in fetchItems post-processing:', error);
+                return { items: slicedItems.map(item => ({ ...item, notes: [], tags: [] })), hasMore };
+            }
+        },
+        [`user-items-${userId}-${page}-${limit}-${status}-${isFavorite}-${search}-${type}`],
+        { revalidate: 3600, tags: [`items-${userId}`] }
+    )();
+};
+
+const getCachedTimelineEvents = async (userId: string, dateStr: string) => {
+    return unstable_cache(
+        async () => {
+            const date = new Date(dateStr);
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            const { meetings: meetingTable, tasks: taskTable } = await import('@/db/schema');
+
+            const [todayMeetings, todayTasks, todayItems, todayReminders] = await Promise.all([
+                db.select().from(meetingTable).where(and(eq(meetingTable.userId, userId), sql`${meetingTable.startTime} >= ${dayStart}`, sql`${meetingTable.startTime} <= ${dayEnd}`)).orderBy(meetingTable.startTime),
+                db.select().from(taskTable).where(and(eq(taskTable.userId, userId), sql`${taskTable.dueDate} >= ${dayStart}`, sql`${taskTable.dueDate} <= ${dayEnd}`, sql`${taskTable.status} != 'done'`)).orderBy(taskTable.dueDate),
+                db.select().from(items).where(and(eq(items.userId, userId), sql`${items.reminderAt} >= ${dayStart}`, sql`${items.reminderAt} <= ${dayEnd}`)).orderBy(items.reminderAt),
+                db.select().from(reminders).where(and(eq(reminders.userId, userId), sql`${reminders.scheduledAt} >= ${dayStart}`, sql`${reminders.scheduledAt} <= ${dayEnd}`)).orderBy(reminders.scheduledAt)
+            ]);
+
+            const events: any[] = [];
+            for (const meeting of todayMeetings) events.push({ id: meeting.id, type: 'meeting', title: meeting.title, startTime: meeting.startTime, endTime: meeting.endTime, duration: meeting.endTime ? Math.round((meeting.endTime.getTime() - meeting.startTime.getTime()) / (1000 * 60)) : 60, metadata: { meetingLink: meeting.link, meetingType: meeting.type, interviewStage: meeting.stage } });
+            for (const task of todayTasks) events.push({ id: task.id, type: 'task', title: task.title, startTime: task.dueDate, duration: 30, status: task.status, metadata: { projectId: task.projectId, priority: task.priority, taskType: task.type } });
+            for (const item of todayItems) events.push({ id: item.id, type: 'item', title: item.title || 'Untitled', startTime: item.reminderAt!, duration: 15, url: item.url, favicon: item.favicon, metadata: { itemType: item.type, siteName: item.siteName } });
+            for (const reminder of todayReminders) events.push({ id: reminder.id, type: 'reminder', title: reminder.title, startTime: reminder.scheduledAt, duration: 5, metadata: { recurrence: reminder.recurrence, meetingId: reminder.meetingId, taskId: reminder.taskId, itemId: reminder.itemId } });
+
+            return events;
+        },
+        [`user-timeline-${userId}-${dateStr}`],
+        { revalidate: 3600, tags: [`timeline-${userId}`, `items-${userId}`, `tasks-${userId}`, `meetings-${userId}`] }
+    )();
+};
+
+const getCachedUserStats = async (userId: string) => {
+    return unstable_cache(
+        async () => {
+            const stats = await db
+                .select({
+                    totalSaved: sql<number>`count(*)::int`,
+                    totalRead: sql<number>`count(*) filter (where ${items.viewCount} > 0)::int`,
                 })
-                    .from(itemsToTags)
-                    .innerJoin(tags, eq(itemsToTags.tagId, tags.id))
-                    .where(inArray(itemsToTags.itemId, itemIds))
-                : [];
+                .from(items)
+                .where(eq(items.userId, userId));
 
-            const itemsWithNotes = slicedItems.map(item => ({
-                ...item,
-                notes: itemNotes
-                    .filter(n => n.itemId === item.id)
-                    .map(n => ({ id: n.id, title: n.title, content: n.content, createdAt: n.createdAt })),
-                tags: itemTagsFlat
-                    .filter(it => it.itemId === item.id)
-                    .map(it => ({ id: it.tagId, name: it.tagName, color: it.tagColor }))
-            }));
+            const mostViewed = await db
+                .select({
+                    id: items.id,
+                    title: items.title,
+                    url: items.url,
+                    viewCount: items.viewCount,
+                    favicon: items.favicon,
+                })
+                .from(items)
+                .where(and(eq(items.userId, userId), sql`${items.viewCount} > 0`))
+                .orderBy(desc(items.viewCount))
+                .limit(5);
 
-            return { items: itemsWithNotes, hasMore };
-        } catch (error) {
-            console.error('Error in fetchItems post-processing:', error);
-            return { items: slicedItems.map(item => ({ ...item, notes: [], tags: [] })), hasMore };
-        }
-    },
-    ['user-items'],
-    { revalidate: 3600, tags: ['items'] }
-);
-
-const getCachedTimelineEvents = unstable_cache(
-    async (userId: string, dateStr: string) => {
-        const date = new Date(dateStr);
-        const dayStart = new Date(date);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(date);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        const { meetings: meetingTable, tasks: taskTable } = await import('@/db/schema');
-
-        const [todayMeetings, todayTasks, todayItems, todayReminders] = await Promise.all([
-            db.select().from(meetingTable).where(and(eq(meetingTable.userId, userId), sql`${meetingTable.startTime} >= ${dayStart}`, sql`${meetingTable.startTime} <= ${dayEnd}`)).orderBy(meetingTable.startTime),
-            db.select().from(taskTable).where(and(eq(taskTable.userId, userId), sql`${taskTable.dueDate} >= ${dayStart}`, sql`${taskTable.dueDate} <= ${dayEnd}`, sql`${taskTable.status} != 'done'`)).orderBy(taskTable.dueDate),
-            db.select().from(items).where(and(eq(items.userId, userId), sql`${items.reminderAt} >= ${dayStart}`, sql`${items.reminderAt} <= ${dayEnd}`)).orderBy(items.reminderAt),
-            db.select().from(reminders).where(and(eq(reminders.userId, userId), sql`${reminders.scheduledAt} >= ${dayStart}`, sql`${reminders.scheduledAt} <= ${dayEnd}`)).orderBy(reminders.scheduledAt)
-        ]);
-
-        const events: any[] = [];
-        for (const meeting of todayMeetings) events.push({ id: meeting.id, type: 'meeting', title: meeting.title, startTime: meeting.startTime, endTime: meeting.endTime, duration: meeting.endTime ? Math.round((meeting.endTime.getTime() - meeting.startTime.getTime()) / (1000 * 60)) : 60, metadata: { meetingLink: meeting.link, meetingType: meeting.type, interviewStage: meeting.stage } });
-        for (const task of todayTasks) events.push({ id: task.id, type: 'task', title: task.title, startTime: task.dueDate, duration: 30, status: task.status, metadata: { projectId: task.projectId, priority: task.priority, taskType: task.type } });
-        for (const item of todayItems) events.push({ id: item.id, type: 'item', title: item.title || 'Untitled', startTime: item.reminderAt!, duration: 15, url: item.url, favicon: item.favicon, metadata: { itemType: item.type, siteName: item.siteName } });
-        for (const reminder of todayReminders) events.push({ id: reminder.id, type: 'reminder', title: reminder.title, startTime: reminder.scheduledAt, duration: 5, metadata: { recurrence: reminder.recurrence, meetingId: reminder.meetingId, taskId: reminder.taskId, itemId: reminder.itemId } });
-
-        return events;
-    },
-    ['user-timeline'],
-    { revalidate: 3600, tags: ['timeline', 'items', 'tasks', 'meetings'] }
-);
-
-const getCachedUserStats = unstable_cache(
-    async (userId: string) => {
-        const stats = await db
-            .select({
-                totalSaved: sql<number>`count(*)::int`,
-                totalRead: sql<number>`count(*) filter (where ${items.viewCount} > 0)::int`,
-            })
-            .from(items)
-            .where(eq(items.userId, userId));
-
-        const mostViewed = await db
-            .select({
-                id: items.id,
-                title: items.title,
-                url: items.url,
-                viewCount: items.viewCount,
-                favicon: items.favicon,
-            })
-            .from(items)
-            .where(and(eq(items.userId, userId), sql`${items.viewCount} > 0`))
-            .orderBy(desc(items.viewCount))
-            .limit(5);
-
-        return {
-            totalSaved: stats[0]?.totalSaved || 0,
-            totalRead: stats[0]?.totalRead || 0,
-            readPercentage: stats[0]?.totalSaved > 0
-                ? Math.round((stats[0].totalRead / stats[0].totalSaved) * 100)
-                : 0,
-            mostViewed,
-        };
-    },
-    ['user-stats'],
-    { revalidate: 3600, tags: ['stats', 'items'] }
-);
+            return {
+                totalSaved: stats[0]?.totalSaved || 0,
+                totalRead: stats[0]?.totalRead || 0,
+                readPercentage: stats[0]?.totalSaved > 0
+                    ? Math.round((stats[0].totalRead / stats[0].totalSaved) * 100)
+                    : 0,
+                mostViewed,
+            };
+        },
+        [`user-stats-${userId}`],
+        { revalidate: 3600, tags: [`stats-${userId}`, `items-${userId}`] }
+    )();
+};
 
 // --- Server Actions ---
 
@@ -191,10 +197,10 @@ export async function addReminder(
 
     if (itemId) {
         await db.update(items).set({ reminderAt: date }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
-        revalidateTag('items', 'default' as any);
+        revalidateTag(`items-${userId}`, 'default' as any);
         revalidatePath('/inbox');
     }
-    revalidateTag('timeline', 'default' as any);
+    revalidateTag(`timeline-${userId}`, 'default' as any);
     revalidatePath('/settings');
 }
 
@@ -204,8 +210,8 @@ export async function deleteReminder(reminderId: string) {
 
     await db.delete(reminders).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 
-    revalidateTag('timeline', 'default' as any);
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`timeline-${userId}`, 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/settings');
 }
@@ -218,8 +224,8 @@ export async function snoozeReminder(reminderId: string, minutes: number) {
 
     await db.update(reminders).set({ scheduledAt: newTime }).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 
-    revalidateTag('timeline', 'default' as any);
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`timeline-${userId}`, 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/settings');
 }
@@ -230,8 +236,8 @@ export async function updateReminder(reminderId: string, date: Date, recurrence:
 
     await db.update(reminders).set({ scheduledAt: date, recurrence, title: title || null }).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 
-    revalidateTag('timeline', 'default' as any);
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`timeline-${userId}`, 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/settings');
 }
@@ -254,7 +260,7 @@ export async function toggleFavorite(itemId: string, isFavorite: boolean) {
 
     await db.update(items).set({ isFavorite }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/favorites');
 }
@@ -265,7 +271,7 @@ export async function updateStatus(itemId: string, status: 'inbox' | 'reading' |
 
     await db.update(items).set({ status }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/archive');
     revalidatePath('/favorites');
@@ -279,7 +285,7 @@ export async function updateItem(itemId: string, data: any) {
 
     await db.update(items).set({ ...validated }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
 }
 
@@ -289,8 +295,8 @@ export async function deleteItem(itemId: string) {
 
     await db.delete(items).where(and(eq(items.id, itemId), eq(items.userId, userId)));
 
-    revalidateTag('items', 'default' as any);
-    revalidateTag('stats', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
+    revalidateTag(`stats-${userId}`, 'default' as any);
     revalidatePath('/inbox');
     revalidatePath('/trash');
 }
@@ -301,8 +307,8 @@ export async function emptyTrash() {
 
     await db.delete(items).where(and(eq(items.userId, userId), eq(items.status, 'trash')));
 
-    revalidateTag('items', 'default' as any);
-    revalidateTag('stats', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
+    revalidateTag(`stats-${userId}`, 'default' as any);
     revalidatePath('/trash');
 }
 
@@ -320,7 +326,7 @@ export async function createItem(url: string, title?: string, description?: stri
 
         if (existingItem.length > 0) {
             const updatedItem = await db.update(items).set({ createdAt: new Date(), status: 'inbox' }).where(eq(items.id, existingItem[0].id)).returning();
-            revalidateTag('items', 'default' as any);
+            revalidateTag(`items-${userId}`, 'default' as any);
             revalidatePath('/inbox');
             return { success: true, message: 'Item already exists. Moved to top.', item: updatedItem[0] };
         }
@@ -345,8 +351,8 @@ export async function createItem(url: string, title?: string, description?: stri
             textContent: extracted?.textContent,
         }).returning();
 
-        revalidateTag('items', 'default' as any);
-        revalidateTag('stats', 'default' as any);
+        revalidateTag(`items-${userId}`, 'default' as any);
+        revalidateTag(`stats-${userId}`, 'default' as any);
         revalidatePath('/inbox');
         return { success: true, item: newItem[0] };
     } catch (error) {
@@ -395,7 +401,7 @@ export async function trackItemView(itemId: string) {
     if (!userId) return;
     try {
         await db.update(items).set({ viewCount: sql`${items.viewCount} + 1`, lastViewedAt: new Date() }).where(and(eq(items.id, itemId), eq(items.userId, userId)));
-        revalidateTag('stats', 'default' as any);
+        revalidateTag(`stats-${userId}`, 'default' as any);
     } catch (error) {
         console.error('Failed to track item view:', error);
     }
@@ -444,7 +450,7 @@ export async function batchUpdateStatus(itemIds: string[], status: 'inbox' | 're
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
     await db.update(items).set({ status }).where(and(inArray(items.id, itemIds), eq(items.userId, userId)));
-    revalidateTag('items', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
     revalidatePath('/inbox');
 }
 
@@ -452,7 +458,7 @@ export async function batchDeleteItems(itemIds: string[]) {
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
     await db.delete(items).where(and(inArray(items.id, itemIds), eq(items.userId, userId)));
-    revalidateTag('items', 'default' as any);
-    revalidateTag('stats', 'default' as any);
+    revalidateTag(`items-${userId}`, 'default' as any);
+    revalidateTag(`stats-${userId}`, 'default' as any);
     revalidatePath('/trash');
 }

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { users, items } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, ilike, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { createItemSchema } from '@/lib/validations';
 import { extractContent } from '@/lib/reader';
@@ -102,8 +102,85 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
   }
 
+  const url = new URL(req.url);
+  const status = url.searchParams.get('status');
+  const type = url.searchParams.get('type');
+  const search = url.searchParams.get('search');
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const offset = (page - 1) * limit;
+
   try {
-    const userItems = await db.select().from(items).where(eq(items.userId, userId)).orderBy(items.createdAt);
+    const conditions = [eq(items.userId, userId)];
+
+    if (status) {
+      conditions.push(eq(items.status, status as any));
+    }
+
+    if (type && type !== 'all') {
+      conditions.push(eq(items.type, type as any));
+    }
+
+    if (search) {
+      const searchPattern = `%${search}%`;
+      // Check if ilike is available or use another approach. Assuming ilike is imported or available via drizzle. 
+      // The actions.ts uses `ilike` and `or`. I need to make sure they are imported.
+      // Checking imports below... yes, I need to add imports.
+      // For now, I will assume imports are needed and add them in a separate step or try to include them here if I can view the file imports again.
+      // Actually, standard `replace_file_content` replaces a block. I will just use sql raw or basic conditions if imports are missing, 
+      // BUT I should check imports first to be safe. 
+      // Wait, I can just use `conditions` array logic which is safe.
+      // I'll stick to a simpler implementation first or checking imports.
+      // Let's assume standard drizzle operators are needed.
+    }
+
+    // Constructing query
+    // I need to import `desc`, `ilike`, `or` if I use them.
+    // Let's postpone the search logic slightly or include the imports in the replacement if possible.
+    // Or better, let's just do the replacement of the whole function and I will fix imports in a second pass.
+
+    // Wait, I can't easily see imports effectively without viewing again.
+    // I'll view the file one more time to be absolutely sure about imports.
+    // Actually, I can just include the imports at the top of the file in a separate call or use `multi_replace`.
+
+    // Let's replace the whole GET function first.
+    let query = db.select().from(items).where(and(...conditions)).orderBy(desc(items.createdAt)).limit(limit).offset(offset);
+
+    // Wait, Drizzle `and` accepts formatted args.
+
+    // I'll rewrite the query construction properly.
+
+    // To implement search properly I need `ilike` and `or` from `drizzle-orm`.
+    // The current file only imports `eq` and `and`.
+
+    const userItems = await db.query.items.findMany({
+      where: (items, { eq, and, or, ilike }) => {
+        const conditions = [eq(items.userId, userId)];
+
+        if (status) {
+          conditions.push(eq(items.status, status as any));
+        }
+
+        if (type && type !== 'all') {
+          conditions.push(eq(items.type, type as any));
+        }
+
+        if (search) {
+          const searchPattern = `%${search}%`;
+          conditions.push(or(
+            ilike(items.title, searchPattern),
+            ilike(items.url, searchPattern),
+            ilike(items.description, searchPattern)
+          )!);
+        }
+
+        return and(...conditions);
+      },
+      orderBy: (items, { desc }) => [desc(items.createdAt)],
+      limit: limit,
+      offset: offset
+    });
+
     return NextResponse.json(userItems, { status: 200, headers: corsHeaders });
   } catch (error) {
     console.error('Error fetching items:', error);
