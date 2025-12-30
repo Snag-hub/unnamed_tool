@@ -216,6 +216,10 @@ export default function SettingsClient({
         }
     };
 
+    if (!mounted) {
+        return null;
+    }
+
     return (
         <div className="space-y-8 w-full">
 
