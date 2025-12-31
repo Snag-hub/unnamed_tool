@@ -331,20 +331,41 @@ export async function createItem(url: string, title?: string, description?: stri
             return { success: true, message: 'Item already exists. Moved to top.', item: updatedItem[0] };
         }
 
-        const metadata = await getMetadata(validated.url);
+        let metadata;
+        try {
+            metadata = await getMetadata(validated.url);
+        } catch (e) {
+            console.error('Metadata fetch failed, safely falling back:', e);
+            metadata = {
+                title: validated.title || validated.url,
+                description: '',
+                image: null,
+                siteName: new URL(validated.url).hostname,
+                favicon: null,
+                type: 'other',
+                author: null
+            };
+        }
+
         let extracted = null;
-        if (metadata.type === 'article') extracted = await extractContent(validated.url);
+        if (metadata.type === 'article') {
+            try {
+                extracted = await extractContent(validated.url);
+            } catch (e) {
+                console.error('Content extraction failed, skipping:', e);
+            }
+        }
 
         const newItem = await db.insert(items).values({
             id: uuidv4(),
             userId,
             url: validated.url,
-            title: validated.title || metadata.title,
+            title: validated.title || metadata.title || 'Untitled',
             description: validated.description || metadata.description,
-            image: metadata.image,
+            image: metadata.image || null,
             siteName: metadata.siteName,
             favicon: metadata.favicon,
-            type: metadata.type || 'other',
+            type: (metadata.type || 'other') as any, // Cast to any to satisfy enum if needed, or specific type
             author: metadata.author,
             status: 'inbox',
             content: extracted?.content,
@@ -357,6 +378,10 @@ export async function createItem(url: string, title?: string, description?: stri
         return { success: true, item: newItem[0] };
     } catch (error) {
         console.error('Create Item Error:', error);
+        // If it's a "Too many requests" error, re-throw it so UI can see it
+        if (error instanceof Error && error.message.includes('Too many requests')) {
+            throw error;
+        }
         throw new Error('Failed to create item');
     }
 }

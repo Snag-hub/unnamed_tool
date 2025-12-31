@@ -6,12 +6,21 @@ import { createItem } from '../actions';
 import { SignInButton, useUser, SignedOut } from '@clerk/nextjs';
 import Image from 'next/image';
 
+import { createNote } from '@/app/note-actions';
+
 function ShareContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { isLoaded, isSignedIn } = useUser();
     const [status, setStatus] = useState<'saving' | 'success' | 'error'>('saving');
     const [message, setMessage] = useState('');
+
+    // Debug info
+    const debugParams = {
+        title: searchParams.get('title'),
+        text: searchParams.get('text'),
+        url: searchParams.get('url')
+    };
 
     const title = searchParams.get('title');
     const text = searchParams.get('text');
@@ -26,34 +35,39 @@ function ShareContent() {
             return;
         }
 
-
-
         const save = async () => {
             try {
-                // Determine text/title priority
-                // Some browsers (Chrome Android) put URL in text field if not matching exact manifest param logic sometimes,
-                // or if sharing a "text + url" combo.
-
                 let targetUrl = url;
                 let finalTitle = title || '';
                 let finalDesc = text || '';
 
-                // Fallback: Try to extract URL from text if url param is missing
+                // 1. Try to find a URL in the text if strictly text-url is missing
                 if (!targetUrl && text) {
                     const urlRegex = /(https?:\/\/[^\s]+)/g;
                     const match = text.match(urlRegex);
                     if (match) {
                         targetUrl = match[0];
-                        // Optional: Remove URL from desc if we want clean text, but keeping it is fine.
                     }
                 }
 
-                if (!targetUrl) {
-                    throw new Error('No URL found to save.');
+                // 2. If we found a URL, save as ITEM
+                if (targetUrl) {
+                    await createItem(targetUrl, finalTitle, finalDesc);
+                    setMessage('Saved as Item!');
+                }
+                // 3. If NO URL, but we have text/title, save as NOTE
+                else if (finalDesc || finalTitle) {
+                    await createNote({
+                        title: finalTitle,
+                        content: finalDesc || finalTitle // Fallback content
+                    });
+                    setMessage('Saved as Note!');
+                }
+                // 4. Nothing to save
+                else {
+                    throw new Error('No content found to save.');
                 }
 
-
-                await createItem(targetUrl, finalTitle, finalDesc);
                 setStatus('success');
                 setTimeout(() => {
                     router.push('/inbox');
@@ -61,11 +75,11 @@ function ShareContent() {
             } catch (err) {
                 console.error(err);
                 setStatus('error');
-                setMessage('Failed to save item. Please try again.');
+                setMessage(err instanceof Error ? err.message : 'Failed to save item.');
             }
         };
 
-        if (url || text) {
+        if (url || text || title) {
             save();
         } else {
             setStatus('error');
@@ -83,21 +97,32 @@ function ShareContent() {
             {status === 'saving' && (
                 <div className="space-y-4">
                     <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                    <p className="text-zinc-600 dark:text-zinc-400">Saving to DayOS...</p>
+                    <p className="text-zinc-600 dark:text-zinc-400">Processing share...</p>
                 </div>
             )}
 
             {status === 'success' && (
                 <div className="space-y-4">
                     <div className="text-green-500 text-4xl">✓</div>
-                    <p className="text-lg font-medium text-zinc-900 dark:text-white">Saved!</p>
+                    <p className="text-lg font-medium text-zinc-900 dark:text-white">{message || 'Saved!'}</p>
                 </div>
             )}
 
             {status === 'error' && (
-                <div className="space-y-4 max-w-xs">
+                <div className="space-y-4 max-w-xs w-full">
                     <div className="text-red-500 text-4xl">!</div>
                     <p className="text-zinc-900 dark:text-white font-medium">{message}</p>
+
+                    {/* Debug Parameters Display */}
+                    <div className="mt-4 p-3 bg-zinc-100 dark:bg-zinc-900 rounded-lg text-left text-xs font-mono overflow-hidden">
+                        <p className="text-zinc-500 mb-1">Debug Info:</p>
+                        <div className="space-y-1 text-zinc-700 dark:text-zinc-300">
+                            <p><span className="text-zinc-400">Title:</span> {debugParams.title || 'null'}</p>
+                            <p><span className="text-zinc-400">Text:</span> {debugParams.text || 'null'}</p>
+                            <p><span className="text-zinc-400">URL:</span> {debugParams.url || 'null'}</p>
+                        </div>
+                    </div>
+
                     {!isSignedIn && isLoaded && (
                         <div className="mt-4">
                             <SignedOut>
