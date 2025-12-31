@@ -92,9 +92,10 @@ export function ItemCard({
                                 e.preventDefault();
                                 onToggleSelection?.();
                             }}
+                            // Mobile: always visible/accessible (opacity-100). Desktop: hover (sm:opacity-0 sm:group-hover:opacity-100)
                             className={`absolute top-2 left-2 z-10 h-5 w-5 rounded border transition-all cursor-pointer flex items-center justify-center ${isSelected
                                 ? 'bg-blue-600 border-blue-600'
-                                : 'bg-white/50 border-zinc-300 opacity-0 group-hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-700'
+                                : 'bg-white/50 border-zinc-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-700'
                                 }`}
                         >
                             {isSelected && (

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, FileText, Calendar, CheckSquare, BookOpen } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, CheckSquare, BookOpen, Trash2 } from 'lucide-react'; // Added Trash2
 import Link from 'next/link';
+import { deleteNote } from '@/app/note-actions'; // Import server action
+import { toast } from 'sonner';
 
 type Note = {
     id: string;
@@ -25,6 +27,7 @@ type NotesViewProps = {
 export default function NotesView({ initialNotes, initialSearch, filterLabel }: NotesViewProps) {
     const router = useRouter();
     const [search, setSearch] = useState(initialSearch || '');
+    const [isPending, startTransition] = useTransition();
 
     const handleSearch = (value: string) => {
         setSearch(value);
@@ -33,6 +36,28 @@ export default function NotesView({ initialNotes, initialSearch, filterLabel }: 
         } else {
             router.push('/notes');
         }
+    };
+
+    const handleDelete = async (e: React.MouseEvent, noteId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const note = initialNotes.find(n => n.id === noteId);
+
+        // Optimistic / Immediate visual feedback provided by sonner's promise/toast
+        // But since we are deleting, we might want to wait or show valid loading.
+        // Simple approach: trigger action.
+
+        toast.promise(
+            async () => {
+                await deleteNote(noteId);
+            },
+            {
+                loading: 'Deleting note...',
+                success: 'Note deleted',
+                error: 'Failed to delete note'
+            }
+        );
     };
 
     // Get attachment icon
@@ -133,12 +158,17 @@ export default function NotesView({ initialNotes, initialSearch, filterLabel }: 
                     </div>
                 ) : (
                     initialNotes.map((note) => (
-                        <Link
+                        <div
                             key={note.id}
-                            href={`/notes/${note.id}`}
-                            className="block p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+                            className="relative group block p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
                         >
-                            <div className="flex items-start justify-between gap-3">
+                            <Link
+                                href={`/notes/${note.id}`}
+                                className="absolute inset-0 z-0"
+                                aria-label={`View note: ${note.title || 'Untitled'}`}
+                            />
+
+                            <div className="relative z-10 pointer-events-none flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                         {getAttachmentIcon(note)}
@@ -155,8 +185,17 @@ export default function NotesView({ initialNotes, initialSearch, filterLabel }: 
                                         <span>{formatDate(note.updatedAt)}</span>
                                     </div>
                                 </div>
+
+                                <button
+                                    onClick={(e) => handleDelete(e, note.id)}
+                                    // Mobile: always visible (opacity-100). Desktop: hover (sm:opacity-0 sm:group-hover:opacity-100)
+                                    className="pointer-events-auto p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                                    aria-label="Delete note"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
-                        </Link>
+                        </div>
                     ))
                 )}
             </div>
