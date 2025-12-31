@@ -20,8 +20,8 @@ export async function rateLimit(key: string, limit: number = 10, windowMs: numbe
         .onConflictDoUpdate({
             target: rateLimits.key,
             set: {
-                count: sql`CASE WHEN "reset" < ${now} THEN 1 ELSE "rate_limits"."count" + 1 END`,
-                reset: sql`CASE WHEN "reset" < ${now} THEN ${futureReset} ELSE "rate_limits"."reset" END`
+                count: sql`CASE WHEN rate_limits.reset < ${now} THEN 1 ELSE rate_limits.count + 1 END`,
+                reset: sql`CASE WHEN rate_limits.reset < ${now} THEN ${futureReset} ELSE rate_limits.reset END`
             }
         })
         .returning();
