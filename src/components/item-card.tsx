@@ -11,6 +11,8 @@ import Link from 'next/link';
 // Let's use deleteItem from actions.
 import dynamic from 'next/dynamic';
 import { TagBadge } from '@/components/tag-badge';
+import { motion, PanInfo } from 'framer-motion';
+import { useHaptic } from '@/hooks/use-haptic';
 
 const ConfirmDialog = dynamic(() => import('@/components/confirm-dialog').then(mod => mod.ConfirmDialog), {
     ssr: false,
@@ -73,201 +75,229 @@ export function ItemCard({
         setIsPending(false);
     };
 
+    const { trigger: haptic } = useHaptic();
+
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (info.offset.x < -100) {
+            haptic('medium');
+            handleDeleteCallback();
+        }
+    };
+
     return (
         <>
-            <div className={`group relative flex flex-row sm:flex-col overflow-hidden rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:shadow-md dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''} min-h-[8rem] sm:h-auto`}>
+            <div className="relative group touch-pan-y h-full">
+                {/* Red Background Layer */}
+                <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end px-6 z-0">
+                    <Trash2 className="text-white w-6 h-6" />
+                </div>
 
-                {/* Image Section */}
-                {item.image && (
-                    <div className="relative w-32 shrink-0 sm:w-full sm:h-auto sm:aspect-video bg-zinc-100 dark:bg-zinc-800">
-                        <img
-                            src={item.image}
-                            alt={item.title || 'Item image'}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
+                <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                    drag="x"
+                    dragConstraints={{ left: -100, right: 0 }}
+                    dragElastic={0.1}
+                    onDragEnd={onDragEnd}
+                    className={`group relative flex flex-row sm:flex-col overflow-hidden rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:shadow-md dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''} min-h-[8rem] sm:h-auto z-10`}
+                    style={{ touchAction: 'pan-y' }}
+                >
+                    {/* Image Section */}
+                    {item.image && (
+                        <div className="relative w-32 shrink-0 sm:w-full sm:h-auto sm:aspect-video bg-zinc-100 dark:bg-zinc-800">
+                            <img
+                                src={item.image}
+                                alt={item.title || 'Item image'}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
 
-                        {/* Selection Overlay */}
-                        <div
-                            onClick={(e) => {
-                                e.preventDefault();
-                                onToggleSelection?.();
-                            }}
-                            // Mobile: always visible/accessible (opacity-100). Desktop: hover (sm:opacity-0 sm:group-hover:opacity-100)
-                            className={`absolute top-2 left-2 z-10 h-5 w-5 rounded border transition-all cursor-pointer flex items-center justify-center ${isSelected
-                                ? 'bg-blue-600 border-blue-600'
-                                : 'bg-white/50 border-zinc-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-700'
-                                }`}
-                        >
-                            {isSelected && (
-                                <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            )}
-                        </div>
-
-                        {/* Badges */}
-                        <div className="absolute bottom-2 right-2 hidden sm:flex gap-1">
-                            {item.type === 'video' && (
-                                <div className="rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                    Video
-                                </div>
-                            )}
-                            {item.reminderAt && new Date(item.reminderAt) > new Date() && (
-                                <div className="rounded bg-blue-600/90 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1">
-                                    <BellIcon className="h-3 w-3" />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Content Section */}
-                <div className="flex flex-1 flex-col justify-between p-3 sm:p-4 overflow-hidden">
-                    <div>
-                        <div className="mb-1 sm:mb-2 flex items-center gap-2">
-                            {item.favicon ? (
-                                <img
-                                    src={item.favicon}
-                                    alt=""
-                                    className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                />
-                            ) : (
-                                <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm bg-zinc-200 dark:bg-zinc-700" />
-                            )}
-                            <span className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-[80px] sm:max-w-none">
-                                {item.siteName || new URL(item.url).hostname}
-                            </span>
-                            <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                            <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500">
-                                {new Date(item.createdAt).toLocaleDateString()}
-                            </span>
-                        </div>
-
-                        <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => trackItemView(item.id)}
-                            className="block text-sm sm:text-base font-semibold leading-tight text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-400 line-clamp-2"
-                        >
-                            {item.title || item.url}
-                        </a>
-
-                        {item.description && (
-                            <p className="mt-1 hidden sm:block line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                                {item.description}
-                            </p>
-                        )}
-
-                        {/* Tags */}
-                        {item.tags && item.tags.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                                {item.tags.map(tag => (
-                                    <TagBadge key={tag.id} tag={tag} />
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Notes Preview */}
-                        {item.notes && item.notes.length > 0 && (
-                            <div className="mt-3 space-y-1.5">
-                                {item.notes.slice(0, 1).map(note => (
-                                    <Link
-                                        key={note.id}
-                                        href={`/notes/${note.id}`}
-                                        className="group/note block p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            <FileText className="w-3 h-3 mt-0.5 text-blue-500" />
-                                            <div className="flex-1 min-w-0">
-                                                {note.title && (
-                                                    <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate mb-0.5">
-                                                        {note.title}
-                                                    </div>
-                                                )}
-                                                <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-1 italic">
-                                                    {note.content}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                                {item.notes.length > 1 && (
-                                    <Link href={`/notes?itemId=${item.id}`} className="text-[10px] text-zinc-400 hover:text-blue-500 font-medium px-1 transition-colors">
-                                        + {item.notes.length - 1} more notes
-                                    </Link>
+                            {/* Selection Overlay */}
+                            <div
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    haptic('selection');
+                                    onToggleSelection?.();
+                                }}
+                                // Mobile: always visible/accessible (opacity-100). Desktop: hover (sm:opacity-0 sm:group-hover:opacity-100)
+                                className={`absolute top-2 left-2 z-10 h-5 w-5 rounded border transition-all cursor-pointer flex items-center justify-center ${isSelected
+                                    ? 'bg-blue-600 border-blue-600'
+                                    : 'bg-white/50 border-zinc-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-700'
+                                    }`}
+                            >
+                                {isSelected && (
+                                    <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
                                 )}
                             </div>
-                        )}
+
+                            {/* Badges */}
+                            <div className="absolute bottom-2 right-2 hidden sm:flex gap-1">
+                                {item.type === 'video' && (
+                                    <div className="rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                                        Video
+                                    </div>
+                                )}
+                                {item.reminderAt && new Date(item.reminderAt) > new Date() && (
+                                    <div className="rounded bg-blue-600/90 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1">
+                                        <BellIcon className="h-3 w-3" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Content Section */}
+                    <div className="flex flex-1 flex-col justify-between p-3 sm:p-4 overflow-hidden">
+                        <div>
+                            <div className="mb-1 sm:mb-2 flex items-center gap-2">
+                                {item.favicon ? (
+                                    <img
+                                        src={item.favicon}
+                                        alt=""
+                                        className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm bg-zinc-200 dark:bg-zinc-700" />
+                                )}
+                                <span className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-[80px] sm:max-w-none">
+                                    {item.siteName || new URL(item.url).hostname}
+                                </span>
+                                <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                                <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500">
+                                    {new Date(item.createdAt).toLocaleDateString()}
+                                </span>
+                            </div>
+
+                            <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => trackItemView(item.id)}
+                                className="block text-sm sm:text-base font-semibold leading-tight text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-400 line-clamp-2"
+                            >
+                                {item.title || item.url}
+                            </a>
+
+                            {item.description && (
+                                <p className="mt-1 hidden sm:block line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                                    {item.description}
+                                </p>
+                            )}
+
+                            {/* Tags */}
+                            {item.tags && item.tags.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                    {item.tags.map(tag => (
+                                        <TagBadge key={tag.id} tag={tag} />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Notes Preview */}
+                            {item.notes && item.notes.length > 0 && (
+                                <div className="mt-3 space-y-1.5">
+                                    {item.notes.slice(0, 1).map(note => (
+                                        <Link
+                                            key={note.id}
+                                            href={`/notes/${note.id}`}
+                                            className="group/note block p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <FileText className="w-3 h-3 mt-0.5 text-blue-500" />
+                                                <div className="flex-1 min-w-0">
+                                                    {note.title && (
+                                                        <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate mb-0.5">
+                                                            {note.title}
+                                                        </div>
+                                                    )}
+                                                    <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-1 italic">
+                                                        {note.content}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    {item.notes.length > 1 && (
+                                        <Link href={`/notes?itemId=${item.id}`} className="text-[10px] text-zinc-400 hover:text-blue-500 font-medium px-1 transition-colors">
+                                            + {item.notes.length - 1} more notes
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Actions - Compact on mobile */}
+                        <div className="mt-auto flex items-center justify-between sm:justify-end gap-0.5 sm:gap-2 pt-2">
+                            <button
+                                onClick={handleFavorite}
+                                className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.isFavorite ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
+                            >
+                                <StarIcon filled={item.isFavorite} className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+
+                            <button
+                                onClick={() => setShowEditDialog(true)}
+                                className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
+                            >
+                                <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+
+                            <button
+                                onClick={() => setShowReminderDialog(true)}
+                                className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.reminderAt ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
+                            >
+                                <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+
+                            {item.content && (
+                                <Link
+                                    href={`/reader/${item.id}`}
+                                    className="rounded-full p-1.5 sm:p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors"
+                                    title="Read Article"
+                                >
+                                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </Link>
+                            )}
+
+                            <div className="flex-1 sm:hidden"></div>
+
+                            {item.status === 'trash' ? (
+                                <button
+                                    onClick={handleRestore}
+                                    className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400 transition-colors"
+                                    title="Restore"
+                                >
+                                    <RestoreIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleArchive}
+                                    className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
+                                    title={item.status === 'archived' ? 'Unarchive' : 'Archive'}
+                                >
+                                    <ArchiveIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </button>
+                            )}
+
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setShowDeleteConfirm(true);
+                                }}
+                                className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                            >
+                                <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Actions - Compact on mobile */}
-                    <div className="mt-auto flex items-center justify-between sm:justify-end gap-0.5 sm:gap-2 pt-2">
-                        <button
-                            onClick={handleFavorite}
-                            className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.isFavorite ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                        >
-                            <StarIcon filled={item.isFavorite} className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
-
-                        <button
-                            onClick={() => setShowEditDialog(true)}
-                            className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-                        >
-                            <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
-
-                        <button
-                            onClick={() => setShowReminderDialog(true)}
-                            className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.reminderAt ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                        >
-                            <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
-
-                        {item.content && (
-                            <Link
-                                href={`/reader/${item.id}`}
-                                className="rounded-full p-1.5 sm:p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors"
-                                title="Read Article"
-                            >
-                                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </Link>
-                        )}
-
-                        <div className="flex-1 sm:hidden"></div>
-
-                        {item.status === 'trash' ? (
-                            <button
-                                onClick={handleRestore}
-                                className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400 transition-colors"
-                                title="Restore"
-                            >
-                                <RestoreIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleArchive}
-                                className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                                title={item.status === 'archived' ? 'Unarchive' : 'Archive'}
-                            >
-                                <ArchiveIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-                        )}
-
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setShowDeleteConfirm(true);
-                            }}
-                            className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                        >
-                            <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
-                    </div>
-                </div>
+                </motion.div>
             </div>
 
             <ConfirmDialog

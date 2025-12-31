@@ -13,6 +13,8 @@ const ConfirmDialog = dynamic(() => import('@/components/confirm-dialog').then(m
 });
 import { useState } from 'react';
 import { FileText } from 'lucide-react';
+import { motion, PanInfo } from 'framer-motion';
+import { useHaptic } from '@/hooks/use-haptic';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -38,14 +40,19 @@ export function TaskCard({ task }: { task: Task }) {
         setOptimisticStatus(task.status);
     }
 
+    const { trigger: haptic } = useHaptic();
+
     const handleStatusChange = async () => {
         const newStatus = optimisticStatus === 'done' ? 'pending' : 'done';
+        haptic('light');
         setOptimisticStatus(newStatus); // Instant update
         setIsPending(true);
 
         try {
             await updateTaskStatus(task.id, newStatus);
+            if (newStatus === 'done') haptic('success');
         } catch (error) {
+            haptic('error');
             setOptimisticStatus(task.status); // Revert on error
             const message = error instanceof Error ? error.message : 'Failed to update task';
             if (message.includes('Too many requests')) {
@@ -59,6 +66,7 @@ export function TaskCard({ task }: { task: Task }) {
     };
 
     const handleDelete = async () => {
+        haptic('medium');
         setShowDeleteConfirm(false);
         setIsDeleted(true); // Hide immediately
 
@@ -68,6 +76,7 @@ export function TaskCard({ task }: { task: Task }) {
             } catch (error) {
                 // If delete fails (e.g. rate limit), restore the UI
                 setIsDeleted(false);
+                haptic('error');
                 const message = error instanceof Error ? error.message : 'Failed to delete task';
                 if (message.includes('Too many requests')) {
                     toast.error('Whoa, slow down! Delete failed.', { description: message });
@@ -83,122 +92,147 @@ export function TaskCard({ task }: { task: Task }) {
                 onClick: () => {
                     clearTimeout(deleteTimeout);
                     setIsDeleted(false);
+                    haptic('selection');
                 },
             },
         });
+    };
+
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (info.offset.x < -100) {
+            handleDelete();
+        }
     };
 
     if (isDeleted) return null;
 
     return (
         <>
-            <div className={`group flex flex-col p-4 bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-all dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                <div className="flex items-start gap-3">
-                    <button
-                        onClick={handleStatusChange}
-                        className={`mt-1 flex-shrink-0 h-5 w-5 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center transition-colors ${optimisticStatus === 'done' ? 'bg-green-500 border-green-500 text-white' : 'hover:border-zinc-400'}`}
-                    >
-                        {optimisticStatus === 'done' && <CheckIcon className="h-3.5 w-3.5" />}
-                    </button>
+            <div className="relative group touch-pan-y">
+                {/* Red Background Layer */}
+                <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end px-6 z-0">
+                    <TrashIcon className="text-white w-6 h-6" />
+                </div>
 
-                    <div className="flex-1 min-w-0">
-                        <h3 className={`text-sm font-semibold text-zinc-900 dark:text-zinc-100 ${optimisticStatus === 'done' ? 'line-through text-zinc-500 dark:text-zinc-500' : ''}`}>
-                            {task.title}
-                        </h3>
-                        {task.description && (
-                            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">
-                                {task.description}
-                            </p>
-                        )}
+                <motion.div
+                    layout
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0, transition: { duration: 0.2 } }}
+                    drag="x"
+                    dragConstraints={{ left: -100, right: 0 }}
+                    dragElastic={0.1}
+                    onDragEnd={onDragEnd}
+                    className={`group relative flex flex-col p-4 bg-white border border-zinc-200 rounded-xl shadow-sm hover:shadow-md transition-all dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''} z-10`}
+                    style={{ touchAction: 'pan-y' }}
+                >
+                    <div className="flex items-start gap-3">
+                        <button
+                            onClick={handleStatusChange}
+                            className={`mt-1 flex-shrink-0 h-5 w-5 rounded border border-zinc-300 dark:border-zinc-600 flex items-center justify-center transition-colors ${optimisticStatus === 'done' ? 'bg-green-500 border-green-500 text-white' : 'hover:border-zinc-400'}`}
+                        >
+                            {optimisticStatus === 'done' && <CheckIcon className="h-3.5 w-3.5" />}
+                        </button>
 
-                        <div className="mt-2 flex items-center gap-2 text-xs">
-                            {task.priority !== 'medium' && (
-                                <span className={`px-1.5 py-0.5 rounded uppercase text-[10px] font-bold ${task.priority === 'high' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
-                                    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                                    }`}>
-                                    {task.priority}
-                                </span>
+                        <div className="flex-1 min-w-0">
+                            <h3 className={`text-sm font-semibold text-zinc-900 dark:text-zinc-100 ${optimisticStatus === 'done' ? 'line-through text-zinc-500 dark:text-zinc-500' : ''}`}>
+                                {task.title}
+                            </h3>
+                            {task.description && (
+                                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                                    {task.description}
+                                </p>
                             )}
 
-                            <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 uppercase text-[10px] font-bold">
-                                {task.type}
-                            </span>
+                            <div className="mt-2 flex items-center gap-2 text-xs">
+                                {task.priority !== 'medium' && (
+                                    <span className={`px-1.5 py-0.5 rounded uppercase text-[10px] font-bold ${task.priority === 'high' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                                        'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                        }`}>
+                                        {task.priority}
+                                    </span>
+                                )}
 
-                            {task.dueDate && (
-                                <span suppressHydrationWarning className={`flex items-center gap-1 ${new Date(task.dueDate).getTime() < new Date().getTime() && optimisticStatus !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>
-                                    <CalendarIcon className="h-3 w-3" />
-                                    {new Date(task.dueDate).toLocaleDateString()}
+                                <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 uppercase text-[10px] font-bold">
+                                    {task.type}
                                 </span>
-                            )}
-                            {task.project && (
-                                <span
-                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
-                                    style={{
-                                        backgroundColor: task.project.color + '20',
-                                        color: task.project.color
-                                    }}
-                                >
-                                    <span style={{ backgroundColor: task.project.color }} className="w-1.5 h-1.5 rounded-full" />
-                                    {task.project.name}
-                                </span>
+
+                                {task.dueDate && (
+                                    <span suppressHydrationWarning className={`flex items-center gap-1 ${new Date(task.dueDate).getTime() < new Date().getTime() && optimisticStatus !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>
+                                        <CalendarIcon className="h-3 w-3" />
+                                        {new Date(task.dueDate).toLocaleDateString()}
+                                    </span>
+                                )}
+                                {task.project && (
+                                    <span
+                                        className="px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
+                                        style={{
+                                            backgroundColor: task.project.color + '20',
+                                            color: task.project.color
+                                        }}
+                                    >
+                                        <span style={{ backgroundColor: task.project.color }} className="w-1.5 h-1.5 rounded-full" />
+                                        {task.project.name}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Notes Preview */}
+                            {task.notes && task.notes.length > 0 && (
+                                <div className="mt-3 space-y-1.5">
+                                    {task.notes.slice(0, 1).map(note => (
+                                        <Link
+                                            key={note.id}
+                                            href={`/notes/${note.id}`}
+                                            className="group/note block p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <FileText className="w-3 h-3 mt-0.5 text-blue-500" />
+                                                <div className="flex-1 min-w-0">
+                                                    {note.title && (
+                                                        <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate mb-0.5">
+                                                            {note.title}
+                                                        </div>
+                                                    )}
+                                                    <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-1 italic">
+                                                        {note.content}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    {task.notes.length > 1 && (
+                                        <Link href={`/notes?taskId=${task.id}`} className="text-[10px] text-zinc-400 hover:text-blue-500 font-medium px-1 transition-colors">
+                                            + {task.notes.length - 1} more notes
+                                        </Link>
+                                    )}
+                                </div>
                             )}
                         </div>
 
-                        {/* Notes Preview */}
-                        {task.notes && task.notes.length > 0 && (
-                            <div className="mt-3 space-y-1.5">
-                                {task.notes.slice(0, 1).map(note => (
-                                    <Link
-                                        key={note.id}
-                                        href={`/notes/${note.id}`}
-                                        className="group/note block p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            <FileText className="w-3 h-3 mt-0.5 text-blue-500" />
-                                            <div className="flex-1 min-w-0">
-                                                {note.title && (
-                                                    <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate mb-0.5">
-                                                        {note.title}
-                                                    </div>
-                                                )}
-                                                <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-1 italic">
-                                                    {note.content}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                                {task.notes.length > 1 && (
-                                    <Link href={`/notes?taskId=${task.id}`} className="text-[10px] text-zinc-400 hover:text-blue-500 font-medium px-1 transition-colors">
-                                        + {task.notes.length - 1} more notes
-                                    </Link>
-                                )}
-                            </div>
-                        )}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <Link
+                                href={`/notes/new?taskId=${task.id}`}
+                                className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+                                title="Add Note"
+                            >
+                                <FileText className="h-4 w-4" />
+                            </Link>
+                            <button
+                                onClick={() => setShowEditDialog(true)}
+                                className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+                            >
+                                <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors dark:hover:bg-red-900/20"
+                            >
+                                <TrashIcon className="h-4 w-4" />
+                            </button>
+                        </div>
                     </div>
-
-                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <Link
-                            href={`/notes/new?taskId=${task.id}`}
-                            className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
-                            title="Add Note"
-                        >
-                            <FileText className="h-4 w-4" />
-                        </Link>
-                        <button
-                            onClick={() => setShowEditDialog(true)}
-                            className="p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 rounded-md transition-colors dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
-                        >
-                            <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors dark:hover:bg-red-900/20"
-                        >
-                            <TrashIcon className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
+                </motion.div>
             </div>
 
             <ConfirmDialog

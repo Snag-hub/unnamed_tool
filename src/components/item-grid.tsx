@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { ItemCard } from '@/components/item-card';
@@ -8,6 +9,8 @@ import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
 import { Loader2, Inbox, LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
+import { SelectionBar } from '@/components/selection-bar';
+import { PullToRefresh } from '@/components/pull-to-refresh';
 
 type Item = InferSelectModel<typeof items>;
 
@@ -20,8 +23,6 @@ interface ItemGridProps {
     search?: string;
     type?: 'all' | 'article' | 'video';
 }
-
-import { SelectionBar } from '@/components/selection-bar';
 
 export function ItemGrid({
     initialItems,
@@ -93,17 +94,24 @@ export function ItemGrid({
         }
     };
 
+
+
     return (
-        <>
+        <PullToRefresh onRefresh={async () => {
+            // Revalidating items via server action would be better, but refresh is ok
+            await new Promise(r => setTimeout(r, 1000));
+        }}>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {items.map((item) => (
-                    <ItemCard
-                        key={item.id}
-                        item={item}
-                        isSelected={selectedIds.includes(item.id)}
-                        onToggleSelection={() => toggleSelection(item.id)}
-                    />
-                ))}
+                <AnimatePresence mode="popLayout">
+                    {items.map((item) => (
+                        <ItemCard
+                            key={item.id}
+                            item={item}
+                            isSelected={selectedIds.includes(item.id)}
+                            onToggleSelection={() => toggleSelection(item.id)}
+                        />
+                    ))}
+                </AnimatePresence>
             </div>
 
             {hasMore && (
@@ -122,6 +130,6 @@ export function ItemGrid({
                     currentStatus={status}
                 />
             )}
-        </>
+        </PullToRefresh>
     );
 }
