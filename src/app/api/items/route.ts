@@ -63,25 +63,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Item already exists' }, { status: 200, headers: corsHeaders });
     }
 
-    const metadata = await getMetadata(validated.url);
+    let metadata;
+    try {
+      metadata = await getMetadata(validated.url);
+    } catch (e) {
+      console.error('Metadata fetch failed (API), safely falling back:', e);
+      metadata = {
+        title: validated.title || validated.url,
+        description: '',
+        image: null,
+        siteName: new URL(validated.url).hostname,
+        favicon: null,
+        type: 'other',
+        author: null
+      };
+    }
 
     // Extract content if it's an article
     let extracted = null;
     if (metadata.type === 'article') {
-      extracted = await extractContent(validated.url);
+      try {
+        extracted = await extractContent(validated.url);
+      } catch (e) {
+        console.error('Content extraction failed (API), skipping:', e);
+      }
     }
 
     const newItem = await db.insert(items).values({
       id: uuidv4(),
       userId: userId,
       url: validated.url,
-      title: metadata.title,
+      title: metadata.title || validated.title || 'Untitled',
       description: metadata.description,
       image: metadata.image,
       // V2 Fields
       siteName: metadata.siteName,
       favicon: metadata.favicon,
-      type: metadata.type || 'other',
+      type: (metadata.type || 'other') as any,
       author: metadata.author,
       status: 'inbox',
       content: extracted?.content,

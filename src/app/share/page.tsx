@@ -52,7 +52,10 @@ function ShareContent() {
 
                 // 2. If we found a URL, save as ITEM
                 if (targetUrl) {
-                    await createItem(targetUrl, finalTitle, finalDesc);
+                    const result = await createItem(targetUrl, finalTitle, finalDesc);
+                    if (!result.success) {
+                        throw new Error(result.message || 'Failed to save item');
+                    }
                     setMessage('Saved as Item!');
                 }
                 // 3. If NO URL, but we have text/title, save as NOTE

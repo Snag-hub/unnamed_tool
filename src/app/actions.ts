@@ -316,12 +316,14 @@ export async function createItem(url: string, title?: string, description?: stri
     const { userId } = await auth();
     if (!userId) throw new Error('Unauthorized');
 
-    const { success } = await rateLimit(`createItem:${userId}`, 5);
-    if (!success) throw new Error('Too many requests. Please slow down.');
-
-    const validated = createItemSchema.parse({ url, title, description });
-
     try {
+        const { success } = await rateLimit(`createItem:${userId}`, 5);
+        if (!success) {
+            return { success: false, message: 'Too many requests. Please slow down.' };
+        }
+
+        const validated = createItemSchema.parse({ url, title, description });
+
         const existingItem = await db.select().from(items).where(and(eq(items.url, validated.url), eq(items.userId, userId))).limit(1);
 
         if (existingItem.length > 0) {
@@ -365,7 +367,7 @@ export async function createItem(url: string, title?: string, description?: stri
             image: metadata.image || null,
             siteName: metadata.siteName,
             favicon: metadata.favicon,
-            type: (metadata.type || 'other') as any, // Cast to any to satisfy enum if needed, or specific type
+            type: (metadata.type || 'other') as any,
             author: metadata.author,
             status: 'inbox',
             content: extracted?.content,
@@ -378,11 +380,10 @@ export async function createItem(url: string, title?: string, description?: stri
         return { success: true, item: newItem[0] };
     } catch (error) {
         console.error('Create Item Error:', error);
-        // If it's a "Too many requests" error, re-throw it so UI can see it
-        if (error instanceof Error && error.message.includes('Too many requests')) {
-            throw error;
-        }
-        throw new Error('Failed to create item');
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'An unexpected error occurred'
+        };
     }
 }
 
