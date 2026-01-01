@@ -16,8 +16,9 @@ export function SearchTrigger({
     if (variant === "compact") {
         return (
             <button
+                type="button"
                 onClick={handleClick}
-                className={`p-2 rounded-xl text-zinc-500 hover:text-blue-600 hover:bg-blue-50 dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-all relative z-30 ${className}`}
+                className={`p-2 rounded-xl text-zinc-500 hover:text-blue-600 hover:bg-blue-50 dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-all relative z-40 cursor-pointer ${className}`}
                 title="Search (⌘K)"
             >
                 <Search className="h-5 w-5" />
@@ -27,8 +28,9 @@ export function SearchTrigger({
 
     return (
         <button
+            type="button"
             onClick={handleClick}
-            className={`flex items-center gap-2 group transition-all ${className}`}
+            className={`flex items-center gap-2 group transition-all w-full cursor-pointer ${className}`}
         >
             <div className="relative flex-1 flex items-center">
                 <Search className="absolute left-3 h-4 w-4 text-zinc-400 group-hover:text-blue-500 transition-colors" />

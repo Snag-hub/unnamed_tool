@@ -57,7 +57,7 @@ export function Omnisearch() {
                     handleSearch(query);
                 });
             }
-        }, 200);
+        }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [query, handleSearch]);
@@ -71,7 +71,7 @@ export function Omnisearch() {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-0 sm:pt-[10vh] px-0 sm:px-4">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-0 sm:pt-[10vh] px-0 sm:px-4">
             <div
                 className="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm dark:bg-zinc-950/80"
                 onClick={() => setIsOpen(false)}
