@@ -151,10 +151,6 @@ export function ItemCard({
                                 ) : (
                                     <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm bg-zinc-200 dark:bg-zinc-700" />
                                 )}
-                                <span className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-[80px] sm:max-w-none">
-                                    {item.siteName || new URL(item.url).hostname}
-                                </span>
-                                <span className="text-zinc-300 dark:text-zinc-700">•</span>
                                 <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500">
                                     {new Date(item.createdAt).toLocaleDateString()}
                                 </span>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/clerk-buttons';
+import { UserButton } from '@clerk/nextjs';
 import { Inbox, Star, Archive, Trash2, Settings, X, CheckSquare, Calendar, Clock, FileText, Hash } from 'lucide-react';
 import { SearchTrigger } from '@/components/search-trigger';
 
@@ -93,11 +94,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* User Profile / Sign Out */}
             <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-                <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {/* We could show user info here if we fetch it */}
+                <div className="flex items-center gap-3">
+                    <UserButton afterSignOutUrl="/" />
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 flex-1 truncate">
+                        {/* UserButton handles the UI, we can keep this clean or add name if we fetch it separately */}
+                        Profile
                     </div>
-                    <SignOutButton />
                 </div>
             </div>
         </div>
