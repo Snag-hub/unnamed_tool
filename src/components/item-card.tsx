@@ -39,7 +39,7 @@ export function ItemCard({
     const handleFavorite = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        haptic('impact');
+        haptic('light');
         setIsPending(true);
         try {
             await toggleFavorite(item.id, !item.isFavorite);
@@ -54,7 +54,7 @@ export function ItemCard({
     const handleArchive = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        haptic('impact');
+        haptic('light');
         setIsPending(true);
         const newStatus = item.status === 'archived' ? 'inbox' : 'archived';
         try {
@@ -135,8 +135,8 @@ export function ItemCard({
                                     onToggleSelection();
                                 }}
                                 className={`absolute top-3 left-3 z-10 w-6 h-6 rounded-lg border-2 transition-all duration-200 flex items-center justify-center ${isSelected
-                                        ? 'bg-blue-600 border-blue-600 scale-110'
-                                        : 'bg-white/90 border-white/50 backdrop-blur-sm hover:bg-white hover:border-white hover:scale-110'
+                                    ? 'bg-blue-600 border-blue-600 scale-110'
+                                    : 'bg-white/90 border-white/50 backdrop-blur-sm hover:bg-white hover:border-white hover:scale-110'
                                     }`}
                             >
                                 {isSelected && (
@@ -192,8 +192,8 @@ export function ItemCard({
                         <button
                             onClick={handleFavorite}
                             className={`shrink-0 p-1.5 rounded-lg transition-all duration-200 ${item.isFavorite
-                                    ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20'
-                                    : 'text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                                ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                                : 'text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
                                 }`}
                         >
                             <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
@@ -283,8 +283,8 @@ export function ItemCard({
                         <button
                             onClick={() => setShowReminderDialog(true)}
                             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${item.reminderAt
-                                    ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                 }`}
                         >
                             <Bell className="w-4 h-4" />
@@ -313,8 +313,8 @@ export function ItemCard({
                             <button
                                 onClick={handleArchive}
                                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${item.status === 'archived'
-                                        ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                     }`}
                             >
                                 <Archive className="w-4 h-4" />
