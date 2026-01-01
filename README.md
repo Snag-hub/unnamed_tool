@@ -61,7 +61,7 @@
 
 1. **Visit the App**
    ```
-   https://your-dayos-app.com
+   https://dayos.snagdev.in
    ```
 
 2. **Create an Account**
@@ -178,7 +178,7 @@ The DayOS browser extension lets you save any webpage with a single click.
 3. **Configure**
    - Click the extension icon
    - Enter your API token from DayOS Settings
-   - Set your DayOS URL (e.g., `https://your-dayos-app.com`)
+   - Click "Save"
 
 4. **Use**
    - Click the extension icon on any page to save

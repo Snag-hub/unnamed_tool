@@ -20,7 +20,7 @@ Save any webpage to DayOS with a single click! This guide covers installation, c
 
 **5-Minute Setup:**
 
-1. Get your API token from [DayOS Settings](https://your-dayos-app.com/settings)
+1. Get your API token from [DayOS Settings](https://dayos.snagdev.in/settings)
 2. Download the extension for your browser
 3. Install the extension
 4. Configure with your API token
@@ -40,7 +40,7 @@ Save any webpage to DayOS with a single click! This guide covers installation, c
 #### Option 2: Manual Installation (Current Method)
 
 1. **Download the Extension**
-   - Go to [DayOS Settings](https://your-dayos-app.com/settings)
+   - Go to [DayOS Settings](https://dayos.snagdev.in/settings)
    - Scroll to **Browser Extension**
    - Click **"Download for Chrome/Edge"**
    - Save the `.zip` file
@@ -83,7 +83,7 @@ Save any webpage to DayOS with a single click! This guide covers installation, c
 #### Option 2: Manual Installation (Current Method)
 
 1. **Download the Extension**
-   - Go to [DayOS Settings](https://your-dayos-app.com/settings)
+   - Go to [DayOS Settings](https://dayos.snagdev.in/settings)
    - Scroll to **Browser Extension**
    - Click **"Download for Firefox"**
    - Save the `.xpi` file
@@ -109,7 +109,7 @@ Save any webpage to DayOS with a single click! This guide covers installation, c
 
 ### Get Your API Token
 
-1. Open [DayOS Settings](https://your-dayos-app.com/settings)
+1. Open [DayOS Settings](https://dayos.snagdev.in/settings)
 2. Scroll to **Developer Access**
 3. Click **"Generate Token"** (if you don't have one)
 4. Click **"Show"** to reveal your token
@@ -120,10 +120,7 @@ Save any webpage to DayOS with a single click! This guide covers installation, c
 1. **Click the DayOS icon** in your browser toolbar
 2. You'll see the extension popup
 3. **Paste your API token** in the "API Token" field
-4. **Enter your DayOS URL**:
-   - Production: `https://your-dayos-app.com`
-   - Local development: `http://localhost:3000`
-5. Click **"Save"**
+4. Click **"Save"**
 
 ✅ **You're all set!** The extension is now connected to your DayOS account.
 

@@ -18,7 +18,7 @@ Welcome to DayOS! This guide will help you get up and running in just a few minu
 
 ## 1. Create Your Account
 
-1. Visit [your-dayos-app.com](https://your-dayos-app.com)
+1. Visit [dayos.snagdev.in](https://dayos.snagdev.in)
 2. Click **"Sign Up"** in the top right
 3. Choose your sign-up method:
    - Email and password
@@ -113,7 +113,6 @@ The browser extension is the fastest way to save content while browsing.
 4. **Configure**
    - Click the extension icon in your browser toolbar
    - Paste your API token
-   - Enter your DayOS URL (e.g., `https://your-dayos-app.com`)
    - Click **"Save"**
 
 5. **Start Saving!**
