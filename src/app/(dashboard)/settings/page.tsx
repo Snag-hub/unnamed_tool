@@ -61,16 +61,6 @@ export default async function SettingsPage() {
 
     return (
         <main className="p-4 md:p-8">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white">
-                    Settings
-                </h1>
-                <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-                    Manage your account and API access
-                </p>
-            </div>
-
             {/* Settings Content */}
             <div className="max-w-4xl mx-auto w-full">
                 <SettingsClient
