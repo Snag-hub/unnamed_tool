@@ -236,27 +236,27 @@ export default function SettingsClient({
                     </h2>
 
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                            <div>
-                                <p className="font-medium text-zinc-900 dark:text-white">Email Notifications</p>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400">Receive reminders via email</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800 gap-4 sm:gap-0">
+                            <div className="min-w-0">
+                                <p className="font-medium text-zinc-900 dark:text-white truncate">Email Notifications</p>
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400 break-words">Receive reminders via email</p>
                             </div>
                             <button
                                 onClick={() => togglePreference('email')}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${emailEnabled ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                className={`self-start sm:self-center relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${emailEnabled ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                            <div>
-                                <p className="font-medium text-zinc-900 dark:text-white">Push Notifications</p>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400">Receive reminders on this device</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800 gap-4 sm:gap-0">
+                            <div className="min-w-0">
+                                <p className="font-medium text-zinc-900 dark:text-white truncate">Push Notifications</p>
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400 break-words">Receive reminders on this device</p>
                             </div>
                             <button
                                 onClick={() => togglePreference('push')}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${pushEnabled ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                className={`self-start sm:self-center relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${pushEnabled ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
