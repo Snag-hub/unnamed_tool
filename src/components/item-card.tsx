@@ -4,25 +4,16 @@ import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
 import { toggleFavorite, updateStatus, deleteItem, trackItemView } from '@/app/actions';
 import { useState } from 'react';
-import { RefreshCcw, Bell, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide, FileText, BookOpen } from 'lucide-react';
+import { Bell, Archive, Star, Pencil, FileText, BookOpen, Trash2, RotateCcw, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-// Actually the existing code uses custom SVG components (PencilIcon, etc) at bottom. 
-// I will import deleteItem and use existing pattern or imported icons. 
-// Let's use deleteItem from actions.
 import dynamic from 'next/dynamic';
 import { TagBadge } from '@/components/tag-badge';
-import { motion } from 'framer-motion';
 import { useHaptic } from '@/hooks/use-haptic';
+import { toast } from 'sonner';
 
-const ConfirmDialog = dynamic(() => import('@/components/confirm-dialog').then(mod => mod.ConfirmDialog), {
-    ssr: false,
-});
-const ReminderScheduler = dynamic(() => import('@/components/reminder-scheduler').then(mod => mod.ReminderScheduler), {
-    ssr: false,
-});
-const EditItemDialog = dynamic(() => import('@/components/edit-item-dialog').then(mod => mod.EditItemDialog), {
-    ssr: false,
-});
+const ConfirmDialog = dynamic(() => import('@/components/confirm-dialog').then(mod => mod.ConfirmDialog), { ssr: false });
+const ReminderScheduler = dynamic(() => import('@/components/reminder-scheduler').then(mod => mod.ReminderScheduler), { ssr: false });
+const EditItemDialog = dynamic(() => import('@/components/edit-item-dialog').then(mod => mod.EditItemDialog), { ssr: false });
 
 type Item = InferSelectModel<typeof items> & {
     notes?: any[];
@@ -42,241 +33,307 @@ export function ItemCard({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showReminderDialog, setShowReminderDialog] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
+    const [imageError, setImageError] = useState(false);
+    const { trigger: haptic } = useHaptic();
 
     const handleFavorite = async (e: React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation();
+        haptic('impact');
         setIsPending(true);
-        await toggleFavorite(item.id, !item.isFavorite);
-        setIsPending(false);
+        try {
+            await toggleFavorite(item.id, !item.isFavorite);
+            toast.success(item.isFavorite ? 'Removed from favorites' : 'Added to favorites');
+        } catch (error) {
+            toast.error('Failed to update favorite');
+        } finally {
+            setIsPending(false);
+        }
     };
 
     const handleArchive = async (e: React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation();
+        haptic('impact');
         setIsPending(true);
         const newStatus = item.status === 'archived' ? 'inbox' : 'archived';
-        await updateStatus(item.id, newStatus);
-        setIsPending(false);
+        try {
+            await updateStatus(item.id, newStatus);
+            toast.success(newStatus === 'archived' ? 'Archived' : 'Restored to inbox');
+        } catch (error) {
+            toast.error('Failed to update status');
+        } finally {
+            setIsPending(false);
+        }
     };
 
     const handleDeleteCallback = async () => {
         setShowDeleteConfirm(false);
         setIsPending(true);
-        if (item.status === 'trash') {
-            await deleteItem(item.id);
-        } else {
-            await updateStatus(item.id, 'trash');
+        try {
+            if (item.status === 'trash') {
+                await deleteItem(item.id);
+                toast.success('Deleted permanently');
+            } else {
+                await updateStatus(item.id, 'trash');
+                toast.success('Moved to trash');
+            }
+        } catch (error) {
+            toast.error('Failed to delete');
+        } finally {
+            setIsPending(false);
         }
-        setIsPending(false);
     };
 
-    const handleRestore = async () => {
+    const handleRestore = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
         setIsPending(true);
-        await updateStatus(item.id, 'inbox');
-        setIsPending(false);
+        try {
+            await updateStatus(item.id, 'inbox');
+            toast.success('Restored to inbox');
+        } catch (error) {
+            toast.error('Failed to restore');
+        } finally {
+            setIsPending(false);
+        }
     };
 
-    const { trigger: haptic } = useHaptic();
-
-
+    const handleTrackView = () => {
+        trackItemView(item.id);
+    };
 
     return (
         <>
-            <div className="relative group touch-pan-y h-full">
+            <div className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${isPending ? 'opacity-50 pointer-events-none' : ''
+                } ${isSelected
+                    ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg shadow-blue-500/10'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-xl'
+                } bg-white dark:bg-zinc-900`}>
 
-                {/* Red Background Layer Removed */}
+                {/* Image Section */}
+                {item.image && !imageError && (
+                    <div className="relative w-full aspect-video bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 overflow-hidden">
+                        <img
+                            src={item.image}
+                            alt={item.title || 'Item image'}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={() => setImageError(true)}
+                            loading="lazy"
+                        />
 
-                <div
-                    className={`group relative flex flex-row sm:flex-col overflow-hidden rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:shadow-md dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''} min-h-[6rem] w-full max-w-full sm:h-auto z-10`}
-                >
-                    {/* Image Section */}
-                    {item.image && (
-                        <div className="relative w-24 shrink-0 sm:w-full sm:h-auto sm:aspect-video bg-zinc-100 dark:bg-zinc-800">
-                            <img
-                                src={item.image}
-                                alt={item.title || 'Item image'}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                            {/* Selection Overlay */}
-                            <div
+                        {/* Selection Checkbox */}
+                        {onToggleSelection && (
+                            <button
                                 onClick={(e) => {
                                     e.preventDefault();
+                                    e.stopPropagation();
                                     haptic('selection');
-                                    onToggleSelection?.();
+                                    onToggleSelection();
                                 }}
-                                // Mobile: always visible/accessible (opacity-100). Desktop: hover (sm:opacity-0 sm:group-hover:opacity-100)
-                                className={`absolute top-2 left-2 z-10 h-5 w-5 rounded border transition-all cursor-pointer flex items-center justify-center ${isSelected
-                                    ? 'bg-blue-600 border-blue-600'
-                                    : 'bg-white/50 border-zinc-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-700'
+                                className={`absolute top-3 left-3 z-10 w-6 h-6 rounded-lg border-2 transition-all duration-200 flex items-center justify-center ${isSelected
+                                        ? 'bg-blue-600 border-blue-600 scale-110'
+                                        : 'bg-white/90 border-white/50 backdrop-blur-sm hover:bg-white hover:border-white hover:scale-110'
                                     }`}
                             >
                                 {isSelected && (
-                                    <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                 )}
-                            </div>
+                            </button>
+                        )}
 
-                            {/* Badges */}
-                            <div className="absolute bottom-2 right-2 hidden sm:flex gap-1">
-                                {item.type === 'video' && (
-                                    <div className="rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                        Video
-                                    </div>
-                                )}
-                                {item.reminderAt && new Date(item.reminderAt) > new Date() && (
-                                    <div className="rounded bg-blue-600/90 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1">
-                                        <BellIcon className="h-3 w-3" />
-                                    </div>
-                                )}
-                            </div>
+                        {/* Status Badges */}
+                        <div className="absolute top-3 right-3 flex gap-2">
+                            {item.type === 'video' && (
+                                <div className="px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1.5">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                    </svg>
+                                    Video
+                                </div>
+                            )}
+                            {item.reminderAt && new Date(item.reminderAt) > new Date() && (
+                                <div className="px-2.5 py-1 rounded-lg bg-blue-600/90 backdrop-blur-sm text-white text-xs font-medium">
+                                    <Bell className="w-3 h-3" />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Content Section */}
+                <div className="p-4 sm:p-5">
+                    {/* Header */}
+                    <div className="flex items-start gap-3 mb-3">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {item.favicon ? (
+                                <img
+                                    src={item.favicon}
+                                    alt=""
+                                    className="w-4 h-4 rounded-sm shrink-0"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <div className="w-4 h-4 rounded-sm bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800 shrink-0" />
+                            )}
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                        </div>
+
+                        {/* Quick Favorite */}
+                        <button
+                            onClick={handleFavorite}
+                            className={`shrink-0 p-1.5 rounded-lg transition-all duration-200 ${item.isFavorite
+                                    ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                                    : 'text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                                }`}
+                        >
+                            <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
+                        </button>
+                    </div>
+
+                    {/* Title */}
+                    <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleTrackView}
+                        className="group/link block mb-2"
+                    >
+                        <h3 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug group-hover/link:text-blue-600 dark:group-hover/link:text-blue-400 transition-colors">
+                            {item.title || 'Untitled Link'}
+                        </h3>
+                    </a>
+
+                    {/* Description */}
+                    {item.description && (
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-3 leading-relaxed">
+                            {item.description}
+                        </p>
+                    )}
+
+                    {/* Tags */}
+                    {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                            {item.tags.slice(0, 3).map(tag => (
+                                <TagBadge key={tag.id} tag={tag} />
+                            ))}
+                            {item.tags.length > 3 && (
+                                <span className="px-2 py-0.5 text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-full">
+                                    +{item.tags.length - 3}
+                                </span>
+                            )}
                         </div>
                     )}
 
-                    {/* Content Section */}
-                    <div className="flex flex-1 flex-col justify-between p-3 sm:p-4 overflow-hidden">
-                        <div>
-                            <div className="mb-1 sm:mb-2 flex items-center gap-2">
-                                {item.favicon ? (
-                                    <img
-                                        src={item.favicon}
-                                        alt=""
-                                        className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-sm bg-zinc-200 dark:bg-zinc-700" />
-                                )}
-                                <span className="text-[10px] sm:text-xs text-zinc-400 dark:text-zinc-500">
-                                    {new Date(item.createdAt).toLocaleDateString()}
-                                </span>
-                            </div>
-
-                            <a
-                                href={item.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => trackItemView(item.id)}
-                                className="block text-sm sm:text-base font-semibold leading-tight text-zinc-900 hover:text-blue-600 dark:text-zinc-100 dark:hover:text-blue-400 line-clamp-2"
-                            >
-                                {item.title || "Untitled Link"}
-                            </a>
-
-                            {item.description && (
-                                <p className="mt-1 hidden sm:block line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                                    {item.description}
-                                </p>
-                            )}
-
-                            {/* Tags */}
-                            {item.tags && item.tags.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                    {item.tags.map(tag => (
-                                        <TagBadge key={tag.id} tag={tag} />
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Notes Preview */}
-                            {item.notes && item.notes.length > 0 && (
-                                <div className="mt-3 space-y-1.5">
-                                    {item.notes.slice(0, 1).map(note => (
-                                        <Link
-                                            key={note.id}
-                                            href={`/notes/${note.id}`}
-                                            className="group/note block p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                        >
-                                            <div className="flex items-start gap-2">
-                                                <FileText className="w-3 h-3 mt-0.5 text-blue-500" />
-                                                <div className="flex-1 min-w-0">
-                                                    {note.title && (
-                                                        <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 truncate mb-0.5">
-                                                            {note.title}
-                                                        </div>
-                                                    )}
-                                                    <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-1 italic">
-                                                        {note.content}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                    {item.notes.length > 1 && (
-                                        <Link href={`/notes?itemId=${item.id}`} className="text-[10px] text-zinc-400 hover:text-blue-500 font-medium px-1 transition-colors">
-                                            + {item.notes.length - 1} more notes
-                                        </Link>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Actions - Compact on mobile */}
-                        <div className="mt-auto flex items-center justify-between sm:justify-end gap-0.5 sm:gap-2 pt-2">
-                            <button
-                                onClick={handleFavorite}
-                                className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.isFavorite ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                            >
-                                <StarIcon filled={item.isFavorite} className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-
-                            <button
-                                onClick={() => setShowEditDialog(true)}
-                                className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-                            >
-                                <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-
-                            <button
-                                onClick={() => setShowReminderDialog(true)}
-                                className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.reminderAt ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                            >
-                                <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-
-                            {item.content && (
+                    {/* Notes Preview */}
+                    {item.notes && item.notes.length > 0 && (
+                        <div className="mb-3 space-y-2">
+                            {item.notes.slice(0, 1).map(note => (
                                 <Link
-                                    href={`/reader/${item.id}`}
-                                    className="rounded-full p-1.5 sm:p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors"
-                                    title="Read Article"
+                                    key={note.id}
+                                    href={`/notes/${note.id}`}
+                                    className="block p-2.5 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group/note"
                                 >
-                                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    <div className="flex items-start gap-2">
+                                        <FileText className="w-3.5 h-3.5 mt-0.5 text-blue-500 shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            {note.title && (
+                                                <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 truncate mb-0.5">
+                                                    {note.title}
+                                                </div>
+                                            )}
+                                            <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-1">
+                                                {note.content}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                            {item.notes.length > 1 && (
+                                <Link
+                                    href={`/notes?itemId=${item.id}`}
+                                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors inline-flex items-center gap-1"
+                                >
+                                    View {item.notes.length - 1} more note{item.notes.length > 2 ? 's' : ''}
+                                    <ExternalLink className="w-3 h-3" />
                                 </Link>
                             )}
-
-                            <div className="flex-1 sm:hidden"></div>
-
-                            {item.status === 'trash' ? (
-                                <button
-                                    onClick={handleRestore}
-                                    className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400 transition-colors"
-                                    title="Restore"
-                                >
-                                    <RestoreIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleArchive}
-                                    className={`rounded-full p-1.5 sm:p-2 transition-colors ${item.status === 'archived' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'}`}
-                                    title={item.status === 'archived' ? 'Unarchive' : 'Archive'}
-                                >
-                                    <ArchiveIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                </button>
-                            )}
-
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setShowDeleteConfirm(true);
-                                }}
-                                className="rounded-full p-1.5 sm:p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                            >
-                                <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
                         </div>
-                    </div>
+                    )}
 
+                    {/* Actions Bar */}
+                    <div className="flex items-center gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                        <button
+                            onClick={() => setShowEditDialog(true)}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                            <Pencil className="w-4 h-4" />
+                            <span className="hidden sm:inline">Edit</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowReminderDialog(true)}
+                            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${item.reminderAt
+                                    ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                }`}
+                        >
+                            <Bell className="w-4 h-4" />
+                            <span className="hidden sm:inline">Remind</span>
+                        </button>
+
+                        {item.content && (
+                            <Link
+                                href={`/reader/${item.id}`}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                            >
+                                <BookOpen className="w-4 h-4" />
+                                <span className="hidden sm:inline">Read</span>
+                            </Link>
+                        )}
+
+                        {item.status === 'trash' ? (
+                            <button
+                                onClick={handleRestore}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                                <span className="hidden sm:inline">Restore</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleArchive}
+                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${item.status === 'archived'
+                                        ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    }`}
+                            >
+                                <Archive className="w-4 h-4" />
+                                <span className="hidden sm:inline">{item.status === 'archived' ? 'Unarchive' : 'Archive'}</span>
+                            </button>
+                        )}
+
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowDeleteConfirm(true);
+                            }}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Delete</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -290,71 +347,13 @@ export function ItemCard({
                 onCancel={() => setShowDeleteConfirm(false)}
             />
 
-            {/* Redesigned Reminder Dialog - "Scheduler" */}
             {showReminderDialog && (
                 <ReminderScheduler itemId={item.id} onClose={() => setShowReminderDialog(false)} />
             )}
 
-            {/* Edit Dialog */}
             {showEditDialog && (
                 <EditItemDialog item={item} onClose={() => setShowEditDialog(false)} />
             )}
         </>
     );
-}
-
-function PencilIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-        </svg>
-    )
-}
-
-function BellIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-        </svg>
-    )
-}
-
-function StarIcon({ className, filled }: { className?: string, filled?: boolean }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-        </svg>
-    )
-}
-
-function ArchiveIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3.75h3.75M12 16.5h3.75m-12-8.25h15.75a1.5 1.5 0 011.5 1.5v2.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5V9.75a1.5 1.5 0 011.5-1.5z" />
-        </svg>
-    )
-}
-
-function TrashIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-        </svg>
-    )
-}
-
-function ClockIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-    )
-}
-
-function RestoreIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-        </svg>
-    )
 }
