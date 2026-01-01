@@ -4,14 +4,14 @@ import { items } from '@/db/schema';
 import { InferSelectModel } from 'drizzle-orm';
 import { toggleFavorite, updateStatus, deleteItem, trackItemView } from '@/app/actions';
 import { useState } from 'react';
-import { RefreshCcw, Bell, Trash2, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide, FileText, BookOpen } from 'lucide-react';
+import { RefreshCcw, Bell, Archive as ArchiveIconLucide, Star as StarIconLucide, Pencil as PencilIconLucide, FileText, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 // Actually the existing code uses custom SVG components (PencilIcon, etc) at bottom. 
 // I will import deleteItem and use existing pattern or imported icons. 
 // Let's use deleteItem from actions.
 import dynamic from 'next/dynamic';
 import { TagBadge } from '@/components/tag-badge';
-import { motion, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useHaptic } from '@/hooks/use-haptic';
 
 const ConfirmDialog = dynamic(() => import('@/components/confirm-dialog').then(mod => mod.ConfirmDialog), {
@@ -77,33 +77,18 @@ export function ItemCard({
 
     const { trigger: haptic } = useHaptic();
 
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        if (info.offset.x < -100) {
-            haptic('medium');
-            handleDeleteCallback();
-        }
-    };
+
 
     return (
         <>
             <div className="relative group touch-pan-y h-full">
-                {/* Red Background Layer */}
-                <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end px-6 z-0">
-                    <Trash2 className="text-white w-6 h-6" />
-                </div>
 
                 <motion.div
                     layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
-                    drag="x"
-                    dragConstraints={{ left: -100, right: 0 }}
-                    dragElastic={0.1}
-
-                    onDragEnd={onDragEnd}
                     className={`group relative flex flex-row sm:flex-col overflow-hidden rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:shadow-md dark:bg-zinc-900 dark:border-zinc-800 ${isPending ? 'opacity-50 pointer-events-none' : ''} min-h-[8rem] sm:h-auto z-10`}
-                    style={{ touchAction: 'pan-y' }}
                 >
                     {/* Image Section */}
                     {item.image && (
