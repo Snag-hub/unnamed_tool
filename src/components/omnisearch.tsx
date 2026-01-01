@@ -43,6 +43,13 @@ export function Omnisearch() {
         }, 0);
     }, { preventDefault: true });
 
+    // Listen for custom open event (from SearchTrigger)
+    useEffect(() => {
+        const handleOpen = () => setIsOpen(true);
+        window.addEventListener('open-omnisearch', handleOpen);
+        return () => window.removeEventListener('open-omnisearch', handleOpen);
+    }, []);
+
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             if (query) {
