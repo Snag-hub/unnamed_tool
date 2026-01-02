@@ -6,15 +6,15 @@ import { Plus, Trash2, Tag as TagIcon, Hash, Loader2 } from 'lucide-react';
 import { TagBadge } from '@/components/tag-badge';
 
 const COLORS = [
-    { name: 'Gray', value: 'bg-zinc-100 text-zinc-700 border-zinc-200' },
-    { name: 'Red', value: 'bg-red-100 text-red-700 border-red-200' },
-    { name: 'Orange', value: 'bg-orange-100 text-orange-700 border-orange-200' },
-    { name: 'Amber', value: 'bg-amber-100 text-amber-700 border-amber-200' },
-    { name: 'Green', value: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    { name: 'Blue', value: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { name: 'Indigo', value: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-    { name: 'Purple', value: 'bg-purple-100 text-purple-700 border-purple-200' },
-    { name: 'Pink', value: 'bg-pink-100 text-pink-700 border-pink-200' },
+    { name: 'Gray', value: '#71717A' },
+    { name: 'Red', value: '#EF4444' },
+    { name: 'Orange', value: '#F97316' },
+    { name: 'Amber', value: '#F59E0B' },
+    { name: 'Green', value: '#10B981' },
+    { name: 'Blue', value: '#3B82F6' },
+    { name: 'Indigo', value: '#6366F1' },
+    { name: 'Purple', value: '#A855F7' },
+    { name: 'Pink', value: '#EC4899' },
 ];
 
 export default function TagsPage() {
@@ -106,7 +106,8 @@ export default function TagsPage() {
                                         key={color.value}
                                         type="button"
                                         onClick={() => setSelectedColor(color.value)}
-                                        className={`w-8 h-8 rounded-full border-2 transition-all ${color.value.split(' ')[0]} ${selectedColor === color.value ? 'border-blue-500 scale-110' : 'border-transparent hover:scale-105'
+                                        style={{ backgroundColor: color.value }}
+                                        className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color.value ? 'border-blue-500 scale-110 ring-2 ring-blue-500/20' : 'border-zinc-200 dark:border-zinc-700 hover:scale-105'
                                             }`}
                                         title={color.name}
                                     />
