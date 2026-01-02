@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import SettingsClient from './client';
 import Link from 'next/link';
 import { getUserStats } from '@/app/actions';
+import { ensureUser } from '@/lib/user';
 
 export default async function SettingsPage() {
     const clerkUser = await currentUser();
@@ -24,6 +25,8 @@ export default async function SettingsPage() {
     };
 
     try {
+        const userId = await ensureUser();
+
         // Try to find user in our database
         const result = await db
             .select({
@@ -32,18 +35,10 @@ export default async function SettingsPage() {
                 pushNotifications: users.pushNotifications,
             })
             .from(users)
-            .where(eq(users.id, clerkUser.id))
+            .where(eq(users.id, userId))
             .limit(1);
 
-        if (result.length === 0) {
-            // Create user if doesn't exist
-            await db.insert(users).values({
-                id: clerkUser.id,
-                email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null,
-                image: clerkUser.imageUrl || null,
-            });
-        } else {
+        if (result.length > 0) {
             apiToken = result[0]?.apiToken || null;
             preferences = {
                 emailNotifications: result[0].emailNotifications,

@@ -11,6 +11,7 @@ import webpush from 'web-push';
 import { createItemSchema, updateItemSchema, addReminderSchema } from '@/lib/validations';
 import { extractContent } from '@/lib/reader';
 import { rateLimit } from '@/lib/rate-limit';
+import { ensureUser } from '@/lib/user';
 
 // Configure Web Push (Global scope for actions)
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -313,8 +314,7 @@ export async function emptyTrash() {
 }
 
 export async function createItem(url: string, title?: string, description?: string) {
-    const { userId } = await auth();
-    if (!userId) throw new Error('Unauthorized');
+    const userId = await ensureUser();
 
     try {
         const { success } = await rateLimit(`createItem:${userId}`, 5);
