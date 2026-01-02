@@ -40,7 +40,7 @@ export function MobileNav() {
                     />
 
                     {/* Sidebar */}
-                    <aside className="absolute top-0 right-0 bottom-0 w-64 bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl p-6 animate-in slide-in-from-right duration-300 overflow-y-auto scrollbar-hide">
+                    <aside className="absolute top-0 right-0 bottom-0 w-64 bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl p-6 pb-20 animate-in slide-in-from-right duration-300 overflow-y-auto scrollbar-hide">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Menu</h2>
                             <button
