@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
   // Default Base URL
-  let API_BASE = 'https://dayos.snagdev.in/api';
+  let API_BASE = 'https://dos4doers.snagdev.in/api';
 
   // --- Helpers ---
 
