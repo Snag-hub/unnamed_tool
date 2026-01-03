@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, FileText, Calendar, CheckSquare, BookOpen, Trash2 } from 'lucide-react'; // Added Trash2
 import Link from 'next/link';
+import { EmptyState } from '@/components/empty-state';
 import { deleteNote } from '@/app/note-actions'; // Import server action
 import { toast } from 'sonner';
 import { AnimatePresence, motion, PanInfo } from 'framer-motion';
@@ -156,24 +157,23 @@ export default function NotesView({ initialNotes, initialSearch, filterLabel }: 
                 <PullToRefresh onRefresh={handleRefresh}>
                     <div className="space-y-3 min-h-[200px]"> {/* min-h for drag area */}
                         {initialNotes.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-64 text-center">
-                                <FileText className="w-16 h-16 text-zinc-300 dark:text-zinc-700 mb-4" />
-                                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-                                    {search ? 'No notes found' : 'No notes yet'}
-                                </h3>
-                                <p className="text-zinc-500 dark:text-zinc-400 mb-4">
-                                    {search ? 'Try a different search term' : 'Create your first note to get started'}
-                                </p>
-                                {!search && (
-                                    <Link
-                                        href="/notes/new"
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                        Create Note
-                                    </Link>
-                                )}
-                            </div>
+                            search ? (
+                                <EmptyState
+                                    icon={Search}
+                                    title="No notes found"
+                                    description={`No notes matching "${search}"`}
+                                    actionLabel="Clear Search"
+                                    onAction={() => handleSearch('')}
+                                />
+                            ) : (
+                                <EmptyState
+                                    icon={FileText}
+                                    title="No notes yet"
+                                    description="Create your first note to get started"
+                                    actionLabel="Create Note"
+                                    actionLink="/notes/new"
+                                />
+                            )
                         ) : (
                             <AnimatePresence mode="popLayout">
                                 {optimisticNotes.map((note) => (
