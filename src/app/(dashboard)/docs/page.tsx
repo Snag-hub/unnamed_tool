@@ -31,6 +31,36 @@ export default function UserGuidePage() {
                 </div>
             </section>
 
+            {/* App Features */}
+            <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">📱 Mobile Experience</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Install as App</h3>
+                        <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                            Detailed guides for installing DOs 4 DOERs effectively on your device:
+                        </p>
+                        <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                            <li><strong className="text-zinc-900 dark:text-zinc-200">iOS:</strong> Tap Safari's <strong>Share</strong> button → <strong>Add to Home Screen</strong>.</li>
+                            <li><strong className="text-zinc-900 dark:text-zinc-200">Android:</strong> Tap Chrome's menu (⋮) → <strong>Install app</strong>.</li>
+                            <li><strong className="text-zinc-900 dark:text-zinc-200">Desktop:</strong> Click the install icon in the address bar.</li>
+                        </ul>
+                    </div>
+                    <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Save via Share</h3>
+                        <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                            You don't need to open the app to save content. Use your phone's native share sheet:
+                        </p>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-zinc-600 dark:text-zinc-400 marker:text-zinc-400">
+                            <li>Find an article, tweet, or video you want to save.</li>
+                            <li>Tap <strong>Share</strong> in your current app.</li>
+                            <li>Select <strong>DOs 4 DOERs</strong> from the list.</li>
+                            <li>The link is instantly saved to your Inbox.</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
             {/* Features */}
             <section className="space-y-8">
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">✨ Core Features</h2>
