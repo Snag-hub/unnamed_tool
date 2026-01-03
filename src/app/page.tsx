@@ -34,7 +34,7 @@ export default async function Home() {
               <>
                 <SignedOut>
                   <ClerkSignInButton mode="modal">
-                    <button className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
+                    <button className="hidden sm:inline-block text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
                       Log in
                     </button>
                   </ClerkSignInButton>
@@ -92,9 +92,63 @@ export default async function Home() {
               </a>
             </div>
 
-            {/* App Preview Mockup (Live CSS Version) */}
+            {/* App Preview Mockup - Responsive */}
             <div className="mt-24 relative mx-auto max-w-6xl animate-in fade-in zoom-in duration-1000 delay-500 px-4">
-              <div className="relative rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 backdrop-blur-sm overflow-hidden group">
+              {/* Mobile Phone Mockup (visible on mobile) */}
+              <div className="sm:hidden relative mx-auto w-full max-w-[320px]">
+                <div className="relative rounded-[3rem] border-[14px] border-zinc-800 dark:border-zinc-700 bg-zinc-900 shadow-2xl overflow-hidden">
+                  {/* Phone Notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-zinc-800 dark:bg-zinc-700 rounded-b-3xl z-10" />
+
+                  {/* Phone Screen */}
+                  <div className="relative bg-white dark:bg-black aspect-[9/19.5] overflow-hidden">
+                    {/* Status Bar */}
+                    <div className="absolute top-0 left-0 right-0 h-12 bg-white dark:bg-black z-20 flex items-center justify-between px-8 pt-2">
+                      <span className="text-[10px] font-bold">9:41</span>
+                      <div className="flex gap-1 items-center">
+                        <div className="w-4 h-3 border border-zinc-400 rounded-sm" />
+                        <div className="w-1 h-3 bg-zinc-400 rounded-sm" />
+                      </div>
+                    </div>
+
+                    {/* App Content */}
+                    <div className="pt-12 px-4 pb-20 h-full overflow-hidden">
+                      {/* Header */}
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="h-6 w-20 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                        <div className="h-8 w-8 bg-blue-600 rounded-full" />
+                      </div>
+
+                      {/* Search Bar */}
+                      <div className="h-10 bg-zinc-100 dark:bg-zinc-900 rounded-xl mb-6" />
+
+                      {/* Cards */}
+                      <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="rounded-2xl border border-zinc-100 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-3 space-y-3 shadow-sm">
+                            <div className="aspect-video bg-zinc-50 dark:bg-zinc-900 rounded-xl" />
+                            <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                            <div className="flex justify-between">
+                              <div className="h-2 w-12 bg-zinc-100 dark:bg-zinc-900 rounded-full" />
+                              <div className="h-2 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-full" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom Nav */}
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 flex justify-around items-center px-8">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className={`h-6 w-6 rounded-lg ${i === 1 ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-800'}`} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Browser Mockup (visible on desktop) */}
+              <div className="hidden sm:block relative rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 backdrop-blur-sm overflow-hidden group">
                 {/* Browser Header */}
                 <div className="flex items-center gap-2 px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50">
                   <div className="flex gap-1.5">
