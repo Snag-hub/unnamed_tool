@@ -188,15 +188,14 @@ export async function GET(req: Request) {
                             url: items.url,
                             favicon: items.favicon,
                             siteName: items.siteName,
-                            imageUrl: items.imageUrl,
+                            image: items.image,
                             createdAt: items.createdAt,
                         })
                         .from(items)
                         .where(
                             and(
                                 eq(items.userId, userId),
-                                eq(items.isArchived, false),
-                                eq(items.isTrashed, false)
+                                eq(items.status, 'inbox')
                             )
                         )
                         .orderBy(sql`${items.createdAt} DESC`)
@@ -230,9 +229,9 @@ export async function GET(req: Request) {
                         .map(
                             (item) => `
                         <a href="${item.url}" style="display: block; text-decoration: none; background: white; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; margin-bottom: 12px; transition: transform 0.2s;">
-                          ${item.imageUrl ? `
+                          ${item.image ? `
                           <div style="width: 100%; height: 160px; background: linear-gradient(135deg, #f4f4f5 0%, #e4e4e7 100%); position: relative; overflow: hidden;">
-                            <img src="${item.imageUrl}" alt="${item.title || 'Article'}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" />
+                            <img src="${item.image}" alt="${item.title || 'Article'}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" />
                           </div>
                           ` : ''}
                           <div style="padding: 16px;">
