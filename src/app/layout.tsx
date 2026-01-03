@@ -49,7 +49,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+        elements: {
+          logoBox: 'flex justify-center items-center',
+          logoImage: 'h-12 w-12',
+        },
+        layout: {
+          logoImageUrl: '/icon-192.png',
+        },
+        variables: {
+          colorPrimary: '#00D4FF',
+        }
+      }}
+    >
       <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
