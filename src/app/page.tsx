@@ -64,11 +64,11 @@ export default async function Home() {
               <span>v2.5: Unified Search & Reader Mode</span>
             </div>
             <h1 className="mx-auto max-w-4xl text-5xl font-black tracking-tight text-zinc-900 dark:text-white sm:text-7xl !leading-[1.1] animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-              The OS for your <br />
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Digital Intelligence</span>
+              Stop Planning. <br />
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Start Doing.</span>
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400 sm:text-xl animate-in fade-in slide-in-from-bottom-12 duration-700 delay-200">
-              DOs 4 DOERs bridges the gap between capture and action. Save everything, focus instantly with Reader Mode, and never miss a follow-up with intelligent reminders.
+              DOs 4 DOERs turns your reading list into action items. Save anything, read distraction-free, and execute with intelligent reminders. Less planning. More doing.
             </p>
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-700 delay-300">
               {user ? (
@@ -105,7 +105,7 @@ export default async function Home() {
                   <div className="flex-1 flex justify-center">
                     <div className="w-full max-w-md h-6 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center px-3 gap-2">
                       <Globe className="w-3 h-3 text-zinc-400" />
-                      <span className="text-[10px] text-zinc-500 font-medium whitespace-nowrap">DOs 4 DOERs.snagdev.in/inbox</span>
+                      <span className="text-[10px] text-zinc-500 font-medium whitespace-nowrap">dos4doers.snagdev.in/inbox</span>
                     </div>
                   </div>
                 </div>
@@ -339,9 +339,9 @@ export default async function Home() {
               <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-blue-500/20 blur-[100px] pointer-events-none" />
               <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div>
-                  <h2 className="text-4xl font-black text-white dark:text-black mb-6">Designed for the <br /> 1% of Doers.</h2>
+                  <h2 className="text-4xl font-black text-white dark:text-black mb-6">Built for People Who <br /> Actually Execute.</h2>
                   <p className="text-zinc-400 dark:text-zinc-600 text-lg mb-8 leading-relaxed italic">
-                    "Most productivity apps are just databases of regret. DOs 4 DOERs is the first time I actually feel in control of my reading queue."
+                    "Most productivity apps are graveyards of good intentions. DOs 4 DOERs is the first tool that actually helps me finish what I start."
                   </p>
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-full border border-white/20 overflow-hidden bg-zinc-800">
@@ -381,36 +381,45 @@ export default async function Home() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-100 py-12 dark:border-zinc-900 bg-white dark:bg-zinc-950">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2">
-            <Image src="/icon-192.png" alt="Logo" width={24} height={24} className="rounded-md" />
-            <span className="text-lg font-black text-zinc-900 dark:text-white">DOs 4 DOERs</span>
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-2 px-1 border border-zinc-200 dark:border-zinc-800 rounded">Beta</span>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            {/* Logo */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Image src="/icon-192.png" alt="Logo" width={24} height={24} className="rounded-md" />
+              <span className="text-lg font-black text-zinc-900 dark:text-white">DOs 4 DOERs</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-2 px-1 border border-zinc-200 dark:border-zinc-800 rounded">Beta</span>
+            </div>
+
+            {/* Links - Responsive flex wrap */}
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest">
+              <Link href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">Privacy</Link>
+              <Link href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">Terms</Link>
+              <Link href="/guide" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">Guide</Link>
+              <Link href="/extensions" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">Extensions</Link>
+              <a href="mailto:imsnag.1@gmail.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">Support</a>
+            </div>
+
+            {/* Social Icons */}
+            <div className="flex gap-6 items-center flex-shrink-0">
+              <a href="https://x.com/therealgeelani" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                <Twitter className="w-5 h-5 text-zinc-400 hover:text-blue-400 cursor-pointer transition-colors" />
+              </a>
+              <a href="https://github.com/Snag-hub" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <Github className="w-5 h-5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors" />
+              </a>
+              <a href="https://linkedin.com/in/syednadeemhussain" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <Linkedin className="w-5 h-5 text-zinc-400 hover:text-blue-700 cursor-pointer transition-colors" />
+              </a>
+              <a href="mailto:imsnag.1@gmail.com" aria-label="Email">
+                <Mail className="w-5 h-5 text-zinc-400 hover:text-orange-400 cursor-pointer transition-colors" />
+              </a>
+            </div>
           </div>
-          <div className="flex gap-8 text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest text-center sm:text-left">
-            <Link href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms</Link>
-            <Link href="/guide" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Guide</Link>
-            <Link href="/extensions" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Extensions</Link>
-            <a href="mailto:imsnag.1@gmail.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Support</a>
+
+          {/* Copyright */}
+          <div className="mt-12 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400/50 px-4">
+            &copy; {new Date().getFullYear()} DOs 4 DOERs. Designed by Snag-hub.
           </div>
-          <div className="flex gap-6 items-center">
-            <a href="https://x.com/therealgeelani" target="_blank" rel="noopener noreferrer">
-              <Twitter className="w-5 h-5 text-zinc-400 hover:text-blue-400 cursor-pointer transition-colors" />
-            </a>
-            <a href="https://github.com/Snag-hub" target="_blank" rel="noopener noreferrer">
-              <Github className="w-5 h-5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors" />
-            </a>
-            <a href="https://linkedin.com/in/syednadeemhussain" target="_blank" rel="noopener noreferrer">
-              <Linkedin className="w-5 h-5 text-zinc-400 hover:text-blue-700 cursor-pointer transition-colors" />
-            </a>
-            <a href="mailto:imsnag.1@gmail.com">
-              <Mail className="w-5 h-5 text-zinc-400 hover:text-orange-400 cursor-pointer transition-colors" />
-            </a>
-          </div>
-        </div>
-        <div className="mt-12 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400/50">
-          &copy; {new Date().getFullYear()} DOs 4 DOERs. Designed by Snag-hub.
         </div>
       </footer>
     </div>
