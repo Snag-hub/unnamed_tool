@@ -182,14 +182,22 @@ export default function SettingsClient({
                 const reg = await navigator.serviceWorker.ready;
                 if (!reg) throw new Error('Service Worker not ready');
 
+                console.log('Creating push subscription...');
+                toast.loading('Creating push subscription...');
+
                 try {
                     const sub = await reg.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
                     });
+                    console.log('Subscription created:', sub);
+
                     const { savePushSubscription } = await import('@/app/actions');
                     await savePushSubscription(JSON.stringify(sub));
+                    console.log('Subscription saved to DB');
+                    toast.success('Push notifications enabled!');
                 } catch (subError: any) {
+                    console.error('Subscription error:', subError);
                     throw new Error(`Subscription failed: ${subError.message}`);
                 }
             }
@@ -351,8 +359,25 @@ export default function SettingsClient({
 
                                                     // 5. Check Subscription
                                                     toast.loading('Step 5: Checking Subscription...', { id: toastId });
-                                                    const sub = await withTimeout(reg.pushManager.getSubscription(), 2000);
-                                                    if (!sub) throw new Error('No active subscription on client');
+                                                    let sub = await withTimeout(reg.pushManager.getSubscription(), 2000);
+
+                                                    if (!sub) {
+                                                        // Auto-create subscription if missing
+                                                        toast.loading('Step 5: Creating subscription...', { id: toastId });
+                                                        try {
+                                                            sub = await withTimeout(
+                                                                reg.pushManager.subscribe({
+                                                                    userVisibleOnly: true,
+                                                                    applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+                                                                }),
+                                                                3000
+                                                            );
+                                                            const { savePushSubscription } = await import('@/app/actions');
+                                                            await savePushSubscription(JSON.stringify(sub));
+                                                        } catch (subErr: any) {
+                                                            throw new Error(`Failed to create subscription: ${subErr.message}`);
+                                                        }
+                                                    }
 
                                                     // 6. Test Send
                                                     toast.loading('Step 6: Sending Test...', { id: toastId });
