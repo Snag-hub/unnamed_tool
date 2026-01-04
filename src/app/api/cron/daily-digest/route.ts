@@ -36,6 +36,19 @@ export async function GET(request: Request) {
     const appUrl = (process.env.NEXTAUTH_URL || 'https://dos4doers.app').replace(/\/$/, "");
 
     for (const user of subscribers) {
+      // Check for duplicate execution (Idempotency)
+      if (user.lastDailyDigestAt) {
+        const lastSent = new Date(user.lastDailyDigestAt);
+        if (
+          lastSent.getDate() === now.getDate() &&
+          lastSent.getMonth() === now.getMonth() &&
+          lastSent.getFullYear() === now.getFullYear()
+        ) {
+          console.log(`⏭️  [DIGEST] Skipping ${user.email} - Already sent today`);
+          continue;
+        }
+      }
+
       // A. Fetch Upcoming Meetings (Next 24h)
       const upcomingMeetings = await db
         .select()
@@ -50,8 +63,6 @@ export async function GET(request: Request) {
         .orderBy(meetings.startTime);
 
       // B. Fetch Due Reminders (Past due or due in next 24h)
-      // Note: We might want to filter out ones that were already sent? 
-      // For a digest, it's nice to see "what's pending" regardless.
       const dueReminders = await db
         .select({
           id: reminders.id,
@@ -95,7 +106,7 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // Generate HTML
+      // Generate HTML (Improved Template)
       const html = `
             <!DOCTYPE html>
             <html>
@@ -103,88 +114,100 @@ export async function GET(request: Request) {
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Your Daily Digest</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f5; }
+                .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+                .header { background: #18181b; padding: 32px 24px; text-align: center; }
+                .content { padding: 32px 24px; }
+                .section { margin-bottom: 32px; }
+                .section-title { font-size: 18px; font-weight: 700; color: #18181b; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f4f4f5; padding-bottom: 8px; }
+                .card { padding: 12px; background: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; margin-bottom: 12px; }
+                .meeting-time { font-family: monospace; font-size: 14px; color: #2563eb; font-weight: 600; }
+                .footer { background: #fafafa; padding: 24px; text-align: center; font-size: 12px; color: #a1a1aa; border-top: 1px solid #e4e4e7; }
+                .btn { display: inline-block; background: #2563eb; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; margin-top: 8px; }
+                .link { color: #2563eb; text-decoration: none; }
+              </style>
             </head>
-            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f4f4f5;">
-              <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
-                
-                <!-- Header -->
-                <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 40px 24px; text-align: center; border-radius: 0 0 24px 24px;">
-                  <img src="${appUrl}/icon-192.png" width="56" height="56" style="border-radius: 14px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);" alt="Logo" />
-                  <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">Daily Briefing</h1>
-                  <p style="color: #e0e7ff; margin: 0; font-size: 15px; font-weight: 500;">Good evening, ${user.name || 'Friend'}</p>
-                </div>
-
-                <div style="padding: 32px 24px;">
+            <body>
+              <div style="padding: 20px;">
+                <div class="container">
                   
-                  <!-- 1. Meetings -->
-                  ${upcomingMeetings.length > 0 ? `
-                  <div style="margin-bottom: 32px;">
-                    <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #18181b; display: flex; align-items: center; gap: 8px;">
-                      <span style="font-size: 20px;">📅</span> Today's Agenda
-                    </h2>
-                    ${upcomingMeetings.map(m => `
-                      <div style="border-left: 3px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin-bottom: 8px; border-radius: 0 8px 8px 0;">
-                        <div style="font-weight: 600; color: #1e3a8a;">${m.title}</div>
-                        <div style="font-size: 13px; color: #3b82f6; margin-top: 4px;">
-                          ${new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                          ${new Date(m.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          ${m.link ? ` • <a href="${m.link}" style="color: #3b82f6; text-decoration: underline;">Join Link</a>` : ''}
-                        </div>
-                      </div>
-                    `).join('')}
+                  <!-- Header -->
+                  <div class="header">
+                    <img src="${appUrl}/icon-192.png" width="48" height="48" style="border-radius: 10px; margin-bottom: 12px;" alt="Logo" />
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Daily Briefing</h1>
+                    <p style="color: #a1a1aa; margin: 8px 0 0 0; font-size: 14px;">Productivity Update for ${user.name || 'Friend'}</p>
                   </div>
-                  ` : ''}
 
-                  <!-- 2. Reminders -->
-                  ${dueReminders.length > 0 ? `
-                  <div style="margin-bottom: 32px;">
-                     <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #18181b; display: flex; align-items: center; gap: 8px;">
-                      <span style="font-size: 20px;">⏰</span> Don't Forget
-                    </h2>
-                    ${dueReminders.map(r => `
-                      <div style="padding: 12px; border: 1px solid #e4e4e7; border-radius: 12px; margin-bottom: 8px; background: #fff;">
-                        <div style="font-weight: 600; color: #18181b;">${r.title || r.itemTitle || 'Untitled Reminder'}</div>
-                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">
-                          Due: ${new Date(r.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          ${r.itemUrl ? ` • <a href="${r.itemUrl}" style="color: #4f46e5; text-decoration: none;">Open Link →</a>` : ''}
+                  <div class="content">
+                    
+                    <!-- 1. Meetings -->
+                    ${upcomingMeetings.length > 0 ? `
+                    <div class="section">
+                      <h2 class="section-title">📅 Today's Agenda</h2>
+                      ${upcomingMeetings.map(m => `
+                        <div class="card" style="border-left: 4px solid #3b82f6;">
+                          <div style="font-weight: 600; color: #18181b;">${m.title}</div>
+                          <div style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+                            <span class="meeting-time">
+                              ${new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                              ${new Date(m.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            ${m.link ? `<a href="${m.link}" class="link" style="font-size: 13px;">Join Meeting →</a>` : ''}
+                          </div>
                         </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                  ` : ''}
+                      `).join('')}
+                    </div>
+                    ` : ''}
 
-                  <!-- 3. New Inbox Items -->
-                  ${newInboxItems.length > 0 ? `
-                  <div style="margin-bottom: 32px;">
-                    <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #18181b; display: flex; align-items: center; gap: 8px;">
-                      <span style="font-size: 20px;">📥</span> Recently Saved
-                    </h2>
-                    ${newInboxItems.map(i => `
-                      <a href="${i.url}" style="display: block; text-decoration: none; color: inherit; margin-bottom: 12px;">
-                        <div style="display: flex; gap: 12px; padding: 12px; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; align-items: center;">
-                           ${i.image ? `<img src="${i.image}" width="60" height="60" style="border-radius: 8px; object-fit: cover; background: #f4f4f5;" />` : ''}
-                           <div style="flex: 1; min-width: 0;">
-                             <div style="font-weight: 600; font-size: 14px; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${i.title || i.url}</div>
+                    <!-- 2. Reminders -->
+                    ${dueReminders.length > 0 ? `
+                    <div class="section">
+                       <h2 class="section-title">⏰ Don't Forget</h2>
+                      ${dueReminders.map(r => `
+                        <div class="card">
+                          <div style="display: flex; align-items: flex-start; gap: 12px;">
+                            <div style="flex: 1;">
+                              <div style="font-weight: 600; color: #18181b;">${r.title || r.itemTitle || 'Untitled Reminder'}</div>
+                              <div style="font-size: 13px; color: #71717a; margin-top: 4px;">
+                                Due: ${new Date(r.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                            ${r.itemUrl ? `<a href="${r.itemUrl}" style="text-decoration: none; font-size: 18px;">🔗</a>` : ''}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                    ` : ''}
+
+                    <!-- 3. New Inbox Items -->
+                    ${newInboxItems.length > 0 ? `
+                    <div class="section">
+                      <h2 class="section-title">📥 Recently Saved</h2>
+                      ${newInboxItems.map(i => `
+                        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f4f4f5;">
+                           <a href="${i.url}" style="text-decoration: none; color: inherit; display: block;">
+                             <div style="font-weight: 500; color: #18181b; font-size: 15px;">${i.title || i.url}</div>
                              ${i.siteName ? `<div style="font-size: 12px; color: #71717a; margin-top: 2px;">${i.siteName}</div>` : ''}
-                           </div>
+                           </a>
                         </div>
+                      `).join('')}
+                    </div>
+                    ` : ''}
+
+                    <!-- CTA -->
+                    <div style="text-align: center; margin-top: 32px;">
+                      <a href="${appUrl}/inbox" class="btn">
+                        Open Dashboard
                       </a>
-                    `).join('')}
-                  </div>
-                  ` : ''}
+                    </div>
 
-                  <!-- CTA -->
-                  <div style="text-align: center; margin-top: 32px;">
-                    <a href="${appUrl}/inbox" style="display: inline-block; background: #18181b; color: white; text-decoration: none; padding: 12px 24px; border-radius: 32px; font-weight: 600; font-size: 14px;">
-                      Open Dashboard
-                    </a>
                   </div>
-
-                </div>
-                
-                <div style="background: #fafafa; padding: 24px; text-align: center; font-size: 12px; color: #a1a1aa;">
-                   You're receiving this because you enabled Email Notifications.
-                   <br><a href="${appUrl}/settings" style="color: #71717a; text-decoration: underline;">Manage Preferences</a>
+                  
+                  <div class="footer">
+                     You're receiving this because you enabled Email Notifications.
+                     <br><a href="${appUrl}/settings" style="color: #71717a; text-decoration: underline;">Manage Preferences</a>
+                  </div>
                 </div>
               </div>
             </body>
@@ -197,6 +220,11 @@ export async function GET(request: Request) {
         subject: `Daily Briefing: ${upcomingMeetings.length} Meetings, ${dueReminders.length} Reminders`,
         html
       });
+
+      // Update Timestamp
+      await db.update(users)
+        .set({ lastDailyDigestAt: new Date() })
+        .where(eq(users.id, user.id));
 
       results.push({ email: user.email });
     }

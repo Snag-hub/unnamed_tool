@@ -4,7 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '@/components/clerk-buttons';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import { UserManagementMenu } from '@/components/user-management-menu';
 import { Inbox, Star, Archive, Trash2, Settings, X, CheckSquare, Calendar, Clock, FileText, Hash } from 'lucide-react';
 import { SearchTrigger } from '@/components/search-trigger';
 
@@ -95,20 +96,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* User Profile / Sign Out */}
             <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-                <div className="flex items-end justify-center w-full">
-                    <UserButton
-                        afterSignOutUrl="/"
-                        showName
-                        appearance={{
-                            elements: {
-                                userButtonBox: "flex flex-row gap-3 items-center",
-                                userButtonTrigger: "focus:shadow-none p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors",
-                                userButtonAvatarBox: "w-8 h-8",
-                                userButtonOuterIdentifier: "text-sm font-medium text-zinc-900 dark:text-zinc-100"
-                            }
-                        }}
-                    />
-                </div>
+                <UserManagementMenu />
             </div>
         </div>
     );

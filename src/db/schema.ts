@@ -40,6 +40,7 @@ export const users = pgTable('user', {
   emailNotifications: boolean('emailNotifications').default(true).notNull(),
   pushNotifications: boolean('pushNotifications').default(true).notNull(),
   status: userStatusEnum('status').default('active').notNull(),
+  lastDailyDigestAt: timestamp('lastDailyDigestAt'),
 });
 
 export const accounts = pgTable(
