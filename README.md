@@ -96,7 +96,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/dos4doers.git
+   git clone https://github.com/Snag-hub/dos4doers.git
    cd dos4doers
    ```
 
