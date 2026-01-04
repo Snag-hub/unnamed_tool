@@ -167,17 +167,30 @@ export default function SettingsClient({
         try {
             // Logic for Push Subscription
             if (type === 'push' && newValue === true) {
-                if ('serviceWorker' in navigator) {
-                    const perm = await Notification.requestPermission();
-                    if (perm === 'granted') {
-                        const reg = await navigator.serviceWorker.ready;
-                        const sub = await reg.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
-                        });
-                        const { savePushSubscription } = await import('@/app/actions');
-                        await savePushSubscription(JSON.stringify(sub));
-                    }
+                if (!('serviceWorker' in navigator)) {
+                    throw new Error('Service Worker not supported');
+                }
+                if (!('Notification' in window)) {
+                    throw new Error('Notifications not supported');
+                }
+
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') {
+                    throw new Error(`Permission ${perm}`);
+                }
+
+                const reg = await navigator.serviceWorker.ready;
+                if (!reg) throw new Error('Service Worker not ready');
+
+                try {
+                    const sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+                    });
+                    const { savePushSubscription } = await import('@/app/actions');
+                    await savePushSubscription(JSON.stringify(sub));
+                } catch (subError: any) {
+                    throw new Error(`Subscription failed: ${subError.message}`);
                 }
             }
 
@@ -185,11 +198,14 @@ export default function SettingsClient({
                 emailNotifications: type === 'email' ? newValue : emailEnabled,
                 pushNotifications: type === 'push' ? newValue : pushEnabled,
             });
-        } catch (e) {
+        } catch (e: any) {
+            console.error(e);
             // Revert
             if (type === 'email') setEmailEnabled(!newValue);
             else setPushEnabled(!newValue);
-            toast.error('Failed to update preference');
+
+            // Show specific error
+            toast.error(e.message || 'Failed to update preference');
         }
     };
 
@@ -305,18 +321,44 @@ export default function SettingsClient({
                                     <div className="flex justify-end pb-3">
                                         <button
                                             onClick={async () => {
+                                                const toastId = toast.loading('Diagnosing...');
                                                 try {
+                                                    // 1. Check Env
+                                                    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) throw new Error('Missing VAPID Key');
+
+                                                    // 2. Check Browser Support
+                                                    if (!('serviceWorker' in navigator)) throw new Error('No SW Support');
+                                                    if (!('Notification' in window)) throw new Error('No Notification Support');
+
+                                                    // 3. Check Permission
+                                                    if (Notification.permission !== 'granted') throw new Error(`Permission: ${Notification.permission}`);
+
+                                                    // 4. Check Registration
+                                                    const reg = await navigator.serviceWorker.ready;
+                                                    if (!reg) throw new Error('SW Not Ready');
+
+                                                    // 5. Check Subscription
+                                                    const sub = await reg.pushManager.getSubscription();
+                                                    if (!sub) throw new Error('No active subscription on client');
+
+                                                    // 6. Test Send
                                                     const res = await sendTestNotification();
-                                                    if (res.success) toast.success(`Sent to ${res.count} device(s)`);
-                                                    else toast.error(res.message || 'Failed to send');
-                                                } catch (e) {
-                                                    toast.error('Error sending test notification');
+
+                                                    toast.dismiss(toastId);
+                                                    if (res.success) toast.success(`Sent! (Count: ${res.count})`);
+                                                    else toast.error(`Server Error: ${res.message}`);
+
+                                                } catch (e: any) {
+                                                    toast.dismiss(toastId);
+                                                    console.error(e);
+                                                    alert(`Diagnostic Error: ${e.message}`); // Use alert for mobile visibility
+                                                    toast.error(e.message);
                                                 }
                                             }}
                                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                                         >
                                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                                            Send Test Alert
+                                            Test & Diagnose
                                         </button>
                                     </div>
                                 )}
