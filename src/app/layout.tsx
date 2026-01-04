@@ -42,6 +42,7 @@ const Omnisearch = dynamic(() => import("@/components/omnisearch").then(mod => m
 import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { OfflineBanner } from '@/components/offline-banner';
+import { ServiceWorkerRegistration } from '@/components/sw-registration';
 
 export default function RootLayout({
   children,
@@ -70,6 +71,7 @@ export default function RootLayout({
           suppressHydrationWarning
         >
           <ErrorBoundary>
+            <ServiceWorkerRegistration />
             <OfflineBanner />
             <Omnisearch />
             {children}
