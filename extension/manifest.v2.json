@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "DOs 4 DOERs Extension",
-  "version": "1.1",
+  "version": "1.0",
   "description": "Save current page to DOs 4 DOERs.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -27,7 +27,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "dos4doers-extension@dos4doers.app",
+      "id": "{a7f8e9d2-4c3b-11ef-9a1c-0242ac120002}",
       "strict_min_version": "142.0",
       "data_collection_permissions": {
         "required": [

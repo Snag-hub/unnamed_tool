@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 
 export function UserManagementMenu() {
     const { user } = useUser();
-    const { signOut } = useClerk();
+    const { signOut, openUserProfile } = useClerk();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +57,16 @@ export function UserManagementMenu() {
             {/* Dropdown */}
             {isOpen && (
                 <div className="absolute bottom-full left-0 w-full mb-2 p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl animate-in slide-in-from-bottom-2 fade-in duration-200 z-50">
+                    <button
+                        onClick={() => {
+                            setIsOpen(false);
+                            openUserProfile();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Manage Account
+                    </button>
                     <Link
                         href="/settings"
                         onClick={() => setIsOpen(false)}

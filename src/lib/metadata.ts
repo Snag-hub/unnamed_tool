@@ -26,6 +26,29 @@ function isValidUrl(urlString: string): boolean {
   }
 }
 
+// Extract YouTube video ID from URL
+function getYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+    /youtube\.com\/embed\/([^&\n?#]+)/,
+    /youtube\.com\/v\/([^&\n?#]+)/
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
+// Generate YouTube thumbnail URL
+function getYouTubeThumbnail(videoId: string): string {
+  // Use maxresdefault for highest quality (1920x1080)
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+}
+
 // Sleep utility for retry backoff
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -85,8 +108,21 @@ export async function getMetadata(url: string): Promise<Metadata> {
 
       const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
-      // Use placeholder if no image found
-      const image = result.ogImage?.[0]?.url || result.twitterImage?.[0]?.url || PLACEHOLDER_IMAGE;
+      // Get image with YouTube-specific fallback
+      let image = result.ogImage?.[0]?.url || result.twitterImage?.[0]?.url;
+
+      // YouTube-specific thumbnail extraction as fallback
+      if (!image && (url.includes('youtube.com') || url.includes('youtu.be'))) {
+        const videoId = getYouTubeVideoId(url);
+        if (videoId) {
+          image = getYouTubeThumbnail(videoId);
+        }
+      }
+
+      // Final fallback to placeholder
+      if (!image) {
+        image = PLACEHOLDER_IMAGE;
+      }
 
       return {
         title: result.ogTitle || result.twitterTitle || 'Untitled Link',
