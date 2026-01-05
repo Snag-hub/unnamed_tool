@@ -145,7 +145,7 @@ export function TaskCard({ task }: { task: Task }) {
                                 </p>
                             )}
 
-                            <div className="mt-2 flex items-center gap-2 text-xs">
+                            <div className="mt-2 flex items-center gap-2 text-xs flex-wrap">
                                 {task.priority !== 'medium' && (
                                     <span className={`px-1.5 py-0.5 rounded uppercase text-[10px] font-bold ${task.priority === 'high' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
                                         'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
@@ -157,6 +157,12 @@ export function TaskCard({ task }: { task: Task }) {
                                 <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 uppercase text-[10px] font-bold">
                                     {task.type}
                                 </span>
+
+                                {task.isRecurring && task.recurrencePattern && task.reminderTime && (
+                                    <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-[10px] font-bold flex items-center gap-1">
+                                        🔁 {task.recurrencePattern} @ {task.reminderTime}
+                                    </span>
+                                )}
 
                                 {task.dueDate && (
                                     <span suppressHydrationWarning className={`flex items-center gap-1 ${new Date(task.dueDate).getTime() < new Date().getTime() && optimisticStatus !== 'done' ? 'text-red-500' : 'text-zinc-500'}`}>

@@ -17,6 +17,9 @@ export function EditTaskDialog({ task, onClose }: EditTaskDialogProps) {
     const [description, setDescription] = useState(task.description || '');
     const [type, setType] = useState<'personal' | 'work'>(task.type as 'personal' | 'work');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(task.priority as 'low' | 'medium' | 'high');
+    const [isRecurring, setIsRecurring] = useState(task.isRecurring || false);
+    const [recurrencePattern, setRecurrencePattern] = useState<'daily' | 'weekly' | 'monthly'>(task.recurrencePattern as any || 'daily');
+    const [reminderTime, setReminderTime] = useState(task.reminderTime || '09:00');
 
     // Format Date for datetime-local
     const formatDateForInput = (date: Date | null) => {
@@ -40,6 +43,9 @@ export function EditTaskDialog({ task, onClose }: EditTaskDialogProps) {
                 type,
                 priority,
                 dueDate: dueDate ? new Date(dueDate) : null,
+                isRecurring,
+                recurrencePattern: isRecurring ? recurrencePattern : null,
+                reminderTime: isRecurring ? reminderTime : null,
             });
             onClose();
         } catch (error) {
@@ -122,6 +128,46 @@ export function EditTaskDialog({ task, onClose }: EditTaskDialogProps) {
                             value={dueDate}
                             onChange={(e) => setDueDate(e.target.value)}
                         />
+                    </div>
+
+                    {/* Recurring Task Section */}
+                    <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={isRecurring}
+                                onChange={(e) => setIsRecurring(e.target.checked)}
+                                className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">🔁 Make this a recurring task</span>
+                        </label>
+
+                        {isRecurring && (
+                            <div className="mt-4 space-y-4 pl-6 border-l-2 border-blue-500">
+                                <div>
+                                    <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Recurrence Pattern</label>
+                                    <select
+                                        value={recurrencePattern}
+                                        onChange={(e) => setRecurrencePattern(e.target.value as any)}
+                                        className="w-full rounded-lg border-0 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white px-3 py-2.5 shadow-sm ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700 focus:ring-2 focus:ring-blue-500 transition-shadow"
+                                    >
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-zinc-500 mb-1.5 ml-1">Notification Time</label>
+                                    <input
+                                        type="time"
+                                        value={reminderTime}
+                                        onChange={(e) => setReminderTime(e.target.value)}
+                                        className="w-full rounded-lg border-0 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white px-3 py-2.5 shadow-sm ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700 focus:ring-2 focus:ring-blue-500 transition-shadow"
+                                    />
+                                    <p className="text-xs text-zinc-500 mt-1 ml-1">You'll receive a reminder at this time {recurrencePattern}</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <button

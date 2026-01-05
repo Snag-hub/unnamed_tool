@@ -44,6 +44,13 @@ export const taskSchema = z.object({
   status: z.enum(['pending', 'in_progress', 'done', 'archived']).default('pending'),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
   projectId: z.string().nullable().optional(),
+  isRecurring: z.boolean().default(false),
+  recurrencePattern: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
+  reminderTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (use HH:MM)').nullable().optional(),
+  lastCompletedAt: z.date().nullable().optional(),
+}).refine(data => !data.isRecurring || (data.recurrencePattern && data.reminderTime), {
+  message: "Recurrence pattern and reminder time are required when task is recurring",
+  path: ["recurrencePattern"],
 });
 
 // Meeting Validations

@@ -20,6 +20,7 @@ export const taskTypeEnum = pgEnum('task_type', ['personal', 'work']);
 export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
 export const meetingTypeEnum = pgEnum('meeting_type', ['general', 'interview']);
 export const interviewStageEnum = pgEnum('interview_stage', ['screening', 'technical', 'culture', 'offer', 'rejected']);
+export const taskRecurrenceEnum = pgEnum('task_recurrence', ['daily', 'weekly', 'monthly']);
 
 export const userStatusEnum = pgEnum('user_status', ['active', 'waitlist']);
 
@@ -174,6 +175,10 @@ export const tasks = pgTable('tasks', {
   type: taskTypeEnum('type').default('personal').notNull(),
   status: taskStatusEnum('status').default('pending').notNull(),
   priority: taskPriorityEnum('priority').default('medium').notNull(),
+  isRecurring: boolean('isRecurring').default(false).notNull(),
+  recurrencePattern: taskRecurrenceEnum('recurrencePattern'),
+  reminderTime: text('reminderTime'), // Format: "HH:MM"
+  lastCompletedAt: timestamp('lastCompletedAt'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 }, (t) => [
