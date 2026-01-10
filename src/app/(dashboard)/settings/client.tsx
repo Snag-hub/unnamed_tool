@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { generateApiToken, deleteAccount, sendTestNotification } from './actions';
+import { generateApiToken, deleteAccount } from './actions';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { getGeneralReminders, addReminder, deleteReminder, updateReminder, updatePreferences } from '@/app/actions';
 import { syncGoogleCalendar } from '@/app/calendar-actions';
@@ -121,7 +121,6 @@ export default function SettingsClient({
     const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
     const [addingReminder, setAddingReminder] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [sendingTest, setSendingTest] = useState(false);
 
     // Initial Load
     useEffect(() => {
@@ -227,35 +226,6 @@ export default function SettingsClient({
 
             // Show specific error
             toast.error(e.message || 'Failed to update preference');
-        }
-    };
-
-    const handleSendTest = async () => {
-        setSendingTest(true);
-        console.log('🧪 [PUSH] Sending test notification...');
-        try {
-            const reg = await navigator.serviceWorker.getRegistration();
-            const sub = await reg?.pushManager.getSubscription();
-
-            if (!sub) {
-                console.warn('⚠️ [PUSH] No active subscription on this device');
-                toast.error('No active subscription found. Try toggling off/on.');
-                return;
-            }
-
-            const result = await sendTestNotification();
-            if (result.success) {
-                console.log(`✅ [PUSH] Test sent. Registered subs: ${result.count}`);
-                toast.success(`Test sent! (Reached ${result.count} devices)`);
-            } else {
-                console.error('❌ [PUSH] Test failed:', result.message);
-                toast.error(result.message || 'Test failed');
-            }
-        } catch (e) {
-            console.error('❌ [PUSH] handleSendTest error:', e);
-            toast.error('Connection error sending test');
-        } finally {
-            setSendingTest(false);
         }
     };
 
@@ -367,18 +337,6 @@ export default function SettingsClient({
                                     checked={pushEnabled}
                                     onChange={() => handleTogglePreference('push')}
                                 />
-                                {pushEnabled && (
-                                    <div className="pt-2 px-2 pb-2">
-                                        <ActionRow
-                                            label="Test Push"
-                                            description="Send a dummy alert to this device."
-                                            buttonText={sendingTest ? 'Sending...' : 'Send Test'}
-                                            action={handleSendTest}
-                                            disabled={sendingTest}
-                                            variant="secondary"
-                                        />
-                                    </div>
-                                )}
                             </div>
                         </SettingCard>
 
